@@ -51,8 +51,9 @@ class Agent:
             timeline.append({"layer": "understanding"})
 
             # call reasoner (async) with memory context from episodic/semantic
+            # create a dedicated event loop for synchronous invocation without
+            # modifying the global loop (avoids closing the test runner loop)
             loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
             # fetch similar experiences to enrich context
             try:
                 prior = self.episodic.retrieve_similar(u.get("parsed_query", ""))
@@ -88,7 +89,6 @@ class Agent:
                 if action_type == "call_llm":
                     # call reasoning again for the task prompt
                     loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
                     resp = loop.run_until_complete(self.reasoner.reason({"task": params}, memory=None))
                     loop.close()
                     outputs.append(resp)

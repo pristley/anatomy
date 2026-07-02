@@ -61,5 +61,4 @@ def filter_content(text: str) -> Tuple[bool, List[Dict[str, Any]]]:
 
 
 __all__ = ["filter_content"]
-def filter_content(text: str):
-    return text
+# (previously a stray re-definition was here and removed)

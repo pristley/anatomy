@@ -11,6 +11,22 @@ class ReasoningCore:
         system_prompt = "You are an agent reasoning engine. Be concise and return steps."
         user_msg = f"Understanding: {understanding}\nMemory: {memory or {}}"
         t0 = time.time()
-        text = await self.llm.infer(system_prompt, user_msg, max_tokens=max_tokens)
+        res = await self.llm.infer(system_prompt, user_msg, max_tokens=max_tokens)
         t1 = time.time()
-        return {"reasoning_output": text, "tokens_used": len(text.split()) if text else 0, "latency_ms": int((t1 - t0) * 1000)}
+        # support LLMs that return either a plain string or a (text, meta) tuple
+        text = None
+        meta = None
+        if isinstance(res, tuple) and len(res) >= 1:
+            text = res[0]
+            if len(res) > 1:
+                meta = res[1]
+        else:
+            text = res
+
+        tokens_used = None
+        if isinstance(meta, dict) and "tokens_used" in meta:
+            tokens_used = int(meta.get("tokens_used", 0))
+        else:
+            tokens_used = len(text.split()) if text else 0
+
+        return {"reasoning_output": text, "tokens_used": tokens_used, "latency_ms": int((t1 - t0) * 1000)}
