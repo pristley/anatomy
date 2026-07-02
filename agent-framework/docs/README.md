@@ -1,5 +1,15 @@
 # Agent Framework: Repository Structure & Development Roadmap
 
+**Recent updates**
+
+- Fixed several backend issues that caused test failures:
+  - `agent_framework/guardrails/content_filter.py` — restored proper PII/profanity detection API
+  - `agent_framework/core/layers/03_reasoning.py` — support LLMs that return (text, meta) tuples
+  - `agent_framework/memory/semantic.py` — added `store_pattern` / retrieval helpers
+  - `agent_framework/tools/validator.py` — added `SchemaValidator.validate_params`
+  - `agent_framework/core/agent.py` — improved async event-loop handling during synchronous runs
+- Created PR [fix/backend-tests-impl](https://github.com/pristley/anatomy/pull/1) with these fixes; backend tests pass locally (`pytest`: 23 passed).
+
 ## 📁 Complete Folder Structure
 
 ```
