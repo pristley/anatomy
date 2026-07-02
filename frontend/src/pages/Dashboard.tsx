@@ -5,10 +5,9 @@ type Agent = { id: string; name: string; status?: string; success_rate?: number;
 
 export default function Dashboard() {
   const [agents, setAgents] = useState<Agent[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setLoading(true)
     axios
       .get('/api/agents')
       .then((r) => setAgents(r.data || []))
@@ -17,7 +16,7 @@ export default function Dashboard() {
   }, [])
 
   const total = agents.length
-  const successRate = agents.length ? Math.round((agents.reduce((s, a) => s + (a.success_rate || 0), 0) / agents.length) * 100) : 0
+  const successRate = agents.length ? agents.reduce((s, a) => s + (a.success_rate || 0), 0) / agents.length : 0
   const avgCost = agents.length ? (agents.reduce((s, a) => s + (a.avg_cost || 0), 0) / agents.length).toFixed(2) : '0.00'
 
   return (
@@ -36,15 +35,15 @@ export default function Dashboard() {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="p-4 bg-white rounded shadow">
           <div className="text-sm text-gray-500">Total Agents</div>
-          <div className="text-2xl font-semibold">{total}</div>
+          <div className="text-2xl font-semibold">Total agents: {total}</div>
         </div>
         <div className="p-4 bg-white rounded shadow">
           <div className="text-sm text-gray-500">Avg Success Rate</div>
-          <div className="text-2xl font-semibold">{successRate}%</div>
+          <div className="text-2xl font-semibold">Success rate: {(successRate * 100).toFixed(0)}%</div>
         </div>
         <div className="p-4 bg-white rounded shadow">
           <div className="text-sm text-gray-500">Avg Cost</div>
-          <div className="text-2xl font-semibold">${avgCost}</div>
+          <div className="text-2xl font-semibold">Avg cost: ${avgCost}</div>
         </div>
       </section>
 

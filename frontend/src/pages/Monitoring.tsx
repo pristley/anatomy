@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
+import useWebSocket from '../hooks/useWebSocket'
 import {
   LineChart,
   Line,
@@ -18,25 +19,36 @@ export default function Monitoring() {
   const [timeline, setTimeline] = useState<any[]>([])
   const [toolLog, setToolLog] = useState<any[]>([])
 
+  // prefer websocket at /ws/monitoring, fallback to polling at /api/monitoring
+  const wsHost = typeof window !== 'undefined' ? window.location.host : 'localhost'
+  const wsProto = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws'
+  const wsUrl = `${wsProto}://${wsHost}/ws/monitoring`
+  const { data: live, connected } = useWebSocket<any>({ url: wsUrl, pollUrl: '/api/monitoring', pollIntervalMs: 5000 })
+
   useEffect(() => {
-    const fetchOnce = () => {
-      axios
-        .get('/api/monitoring')
-        .then((r) => {
-          setData(r.data?.timeseries ?? mockData())
-          setTimeline(r.data?.timeline ?? [])
-          setToolLog(r.data?.tools ?? [])
-        })
-        .catch(() => {
-          setData(mockData())
-          setTimeline([])
-          setToolLog([])
-        })
-    }
-    fetchOnce()
-    const t = setInterval(fetchOnce, 5000)
-    return () => clearInterval(t)
-  }, [])
+    if (!live) return
+    // expected shape: { timeseries, timeline, tools }
+    setData(live.timeseries ?? mockData())
+    setTimeline(live.timeline ?? [])
+    setToolLog(live.tools ?? [])
+  }, [live])
+
+  // initial fallback: load once if no live data yet
+  useEffect(() => {
+    if (connected || live) return
+    axios
+      .get('/api/monitoring')
+      .then((r) => {
+        setData(r.data?.timeseries ?? mockData())
+        setTimeline(r.data?.timeline ?? [])
+        setToolLog(r.data?.tools ?? [])
+      })
+      .catch(() => {
+        setData(mockData())
+        setTimeline([])
+        setToolLog([])
+      })
+  }, [connected, live])
 
   return (
     <div className="p-6">

@@ -52,7 +52,7 @@ class AgentState(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def timestamps_present(cls, values):
         if "created_at" not in values or values["created_at"] is None:
             values["created_at"] = datetime.utcnow()
