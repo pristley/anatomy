@@ -494,8 +494,8 @@ agent-framework/
 ### Phase 4: Frontend Development (Weeks 10-13)
 
 #### Task P4.1: React/Vue Setup & Layout
-- [ ] Vite project setup
-- [ ] TypeScript configuration
+- [x] Vite project setup (scaffolded: frontend/ with React + TypeScript + Tailwind)
+- [x] TypeScript configuration
 - [ ] Component library setup (TailwindCSS or Material-UI)
 - [ ] Layout components (Header, Sidebar, Footer)
 - [ ] Routing (React Router or Vue Router)
