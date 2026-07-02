@@ -12,10 +12,16 @@ from pathlib import Path
 def _load_from_layers(filename: str, attr: str):
     base = Path(__file__).resolve().parent
     path = base / "layers" / filename
-    spec = spec_from_file_location(f"agent_framework.core.layers.{filename}", str(path))
+    real_path = path.resolve()
+    # derive package relative to the agent_framework root so relative imports work
+    relative = real_path.parent.relative_to(base.parent)
+    pkg = "agent_framework." + ".".join(relative.parts)
+    mod_name = f"{pkg}.{real_path.stem}"
+    spec = spec_from_file_location(mod_name, str(real_path))
     if spec is None or spec.loader is None:
         raise ImportError(f"Cannot load module {filename}")
     mod = module_from_spec(spec)
+    mod.__package__ = pkg
     spec.loader.exec_module(mod)
     return getattr(mod, attr)
 
@@ -43,7 +49,7 @@ class Agent:
         self.state_manager = None
         self.decision_engine = _DecisionEngine()
 
-    async def run(self, query: str, user_id: str) -> Dict[str, Any]:
+    async def _run_async(self, query: str, user_id: str) -> Dict[str, Any]:
         start_all = time.monotonic()
         metrics: Dict[str, Any] = {"tokens_used": 0, "cost": 0.0}
         try:
@@ -84,10 +90,21 @@ class Agent:
                     last_output = r.get("reasoning_output")
 
             total_ms = int((time.monotonic() - start_all) * 1000)
+            metrics["duration_ms"] = total_ms
             return {"success": True, "output": last_output, "metrics": metrics, "cost": metrics.get("cost", 0.0), "execution_time_ms": total_ms}
 
         except Exception as exc:  # pragma: no cover - orchestration error handling
             return {"success": False, "error": str(exc)}
+
+    def run(self, query: str, user_id: str) -> Dict[str, Any]:
+        """Synchronous wrapper around the async pipeline for convenience in tests."""
+        import asyncio
+
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # if already in an event loop, return coroutine for caller to await
+            return self._run_async(query, user_id)
+        return loop.run_until_complete(self._run_async(query, user_id))
 
 
 __all__ = ["Agent"]

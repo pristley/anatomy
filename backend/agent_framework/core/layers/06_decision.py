@@ -35,11 +35,9 @@ class DecisionEngine:
                 continue
 
             tool = registry.get(tool_name)
-            if tool is None:
-                continue
 
-            # validate params against tool schema if available
-            schema = tool.params_schema
+            # validate params against tool schema if available (if tool not registered, schema is None)
+            schema = tool.params_schema if tool is not None else None
             valid, errors, sanitized = SchemaValidator.validate_params(params, schema)
             if not valid:
                 # skip invalid tool invocation

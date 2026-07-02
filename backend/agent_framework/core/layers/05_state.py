@@ -8,8 +8,9 @@ from ..types import AgentState, TaskDef
 
 
 class StateManager:
-    def __init__(self, agent_id: str) -> None:
-        self.agent_id = agent_id
+    def __init__(self, agent_id: str | None = None) -> None:
+        # agent_id optional for tests / quick usage
+        self.agent_id = agent_id or "unknown"
         self.state_history: List[AgentState] = []
 
     def initialize_state(self, goal: str | None, tasks: List[TaskDef]) -> AgentState:

@@ -5,6 +5,8 @@ from typing import Dict, Any
 
 from .types import AgentInput, AgentState
 from .interfaces.claude_client import ClaudeClient
+from agent_framework.memory.episodic import EpisodicMemory
+from agent_framework.memory.semantic import SemanticMemory
 from agent_framework.tools.base import ToolExecutor
 from agent_framework.guardrails.orchestrator import GuardrailOrchestrator
 
@@ -22,7 +24,7 @@ decision_layer = _import_layer("06_decision")
 
 
 class Agent:
-    def __init__(self, model_name: str = "claude-3-5-sonnet-20241022", max_iterations: int = 10):
+    def __init__(self, model_name: str = "claude-3-5-sonnet-20241022", max_iterations: int = 10, episodic_memory: EpisodicMemory | None = None, semantic_memory: SemanticMemory | None = None):
         self.model_name = model_name
         self.max_iterations = max_iterations
         self.llm = ClaudeClient()
@@ -34,6 +36,9 @@ class Agent:
         self.decider = decision_layer.DecisionEngine()
         self.tool_executor = ToolExecutor()
         self.guardrails = GuardrailOrchestrator()
+        # memory
+        self.episodic = episodic_memory or EpisodicMemory()
+        self.semantic = semantic_memory or SemanticMemory()
 
     def run(self, query: str, user_id: str = None) -> Dict[str, Any]:
         timeline = []
@@ -45,10 +50,16 @@ class Agent:
             u = self.understand.understand(inp)
             timeline.append({"layer": "understanding"})
 
-            # call reasoner (async)
+            # call reasoner (async) with memory context from episodic/semantic
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            reasoning = loop.run_until_complete(self.reasoner.reason(u, memory=None))
+            # fetch similar experiences to enrich context
+            try:
+                prior = self.episodic.retrieve_similar(u.get("parsed_query", ""))
+            except Exception:
+                prior = []
+            mem_ctx = {"prior_experiences": prior, "semantic": self.semantic.search(u.get("parsed_query", ""))}
+            reasoning = loop.run_until_complete(self.reasoner.reason(u, memory=mem_ctx))
             loop.close()
             timeline.append({"layer": "reasoning", "tokens": reasoning.get("tokens_used")})
 
@@ -101,6 +112,11 @@ class Agent:
                 metrics["cost"] += 0.0
 
                 r = {"reasoning_output": exec_res.get("output"), "tokens_used": 0, "cost": 0.0}
+                # store experience
+                try:
+                    self.episodic.store_experience(inp.query, f"{action_type}:{params}", str(r.get("reasoning_output")), score=1.0)
+                except Exception:
+                    pass
                 iterations += 1
 
             t1 = time.time()

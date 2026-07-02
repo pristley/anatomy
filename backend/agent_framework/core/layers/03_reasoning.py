@@ -19,7 +19,14 @@ class ReasoningCore:
         max_tokens = int(os.getenv("MAX_TOKENS_PER_REQUEST", "512"))
 
         start = time.monotonic()
-        text, metrics = await self.llm.infer(system_prompt, user_msg, max_tokens=max_tokens)
+        result = await self.llm.infer(system_prompt, user_msg, max_tokens=max_tokens)
+        # support clients that return either (text, metrics) or just text
+        if isinstance(result, tuple) and len(result) == 2:
+            text, metrics = result
+        else:
+            text = result
+            metrics = {}
+
         latency_ms = int((time.monotonic() - start) * 1000)
         metrics.setdefault("latency_ms", latency_ms)
 

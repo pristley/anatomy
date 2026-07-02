@@ -14,7 +14,7 @@ class TaskDef(BaseModel):
     id: str
     name: str
     dependencies: List[str] = Field(default_factory=list)
-    action_type: str
+    action_type: str = "call_llm"
     parameters: Dict[str, Any] = Field(default_factory=dict)
     status: str = "pending"
 
