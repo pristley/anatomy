@@ -1,9 +1,11 @@
 """Layer 6: Decision engine."""
 from __future__ import annotations
 
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any
 
 from ..types import AgentState, TaskDef
+from agent_framework.tools.base import ToolRegistry
+from agent_framework.tools.validator import SchemaValidator
 
 
 class DecisionEngine:
@@ -19,15 +21,32 @@ class DecisionEngine:
 
         Chooses the first incomplete task whose dependencies are satisfied.
         """
+        registry = ToolRegistry.get_default()
         for task in state.active_tasks:
             if task.status == "completed":
                 continue
             if not self._dependencies_satisfied(task, state):
                 continue
 
-            # budget/compliance checks would go here; assume OK
+            # if task specifies a tool name in parameters, prefer that
+            params = task.parameters or {}
+            tool_name = params.get("tool") or task.action_type
+            if not tool_name:
+                continue
+
+            tool = registry.get(tool_name)
+            if tool is None:
+                continue
+
+            # validate params against tool schema if available
+            schema = tool.params_schema
+            valid, errors, sanitized = SchemaValidator.validate_params(params, schema)
+            if not valid:
+                # skip invalid tool invocation
+                continue
+
             confidence = 0.8
-            return task.action_type, task.parameters or {}, confidence
+            return tool_name, sanitized, confidence
 
         return None, None, 0.0
 
