@@ -5,6 +5,8 @@ from typing import Dict, Any
 
 from .types import AgentInput, AgentState
 from .interfaces.claude_client import ClaudeClient
+from agent_framework.tools.base import ToolExecutor
+from agent_framework.guardrails.orchestrator import GuardrailOrchestrator
 
 # dynamic import helper for numeric-prefixed modules
 def _import_layer(name: str):
@@ -30,6 +32,8 @@ class Agent:
         self.planner = planning_layer.PlanningDecomposition()
         self.state_mgr = state_layer.StateManager()
         self.decider = decision_layer.DecisionEngine()
+        self.tool_executor = ToolExecutor()
+        self.guardrails = GuardrailOrchestrator()
 
     def run(self, query: str, user_id: str = None) -> Dict[str, Any]:
         timeline = []
@@ -52,6 +56,8 @@ class Agent:
             state = self.state_mgr.initialize_state(goal=inp.query, tasks=tasks)
             timeline.append({"layer": "planning", "tasks": len(tasks)})
 
+            metrics: Dict[str, Any] = {"tokens_used": 0, "cost": 0.0}
+
             # simple execution loop
             iterations = 0
             outputs = []
@@ -59,7 +65,15 @@ class Agent:
                 action = self.decider.decide_next_action(state)
                 if action is None:
                     break
-                action_type, params = action
+                # support decider returning (action_type, params) or (action_type, params, confidence)
+                if isinstance(action, tuple) and len(action) == 3:
+                    action_type, params, confidence = action
+                elif isinstance(action, tuple) and len(action) >= 2:
+                    action_type, params = action[0], action[1]
+                    confidence = 0.0
+                else:
+                    # unexpected shape
+                    break
                 if action_type == "call_llm":
                     # call reasoning again for the task prompt
                     loop = asyncio.new_event_loop()
@@ -69,6 +83,24 @@ class Agent:
                     outputs.append(resp)
                     # mark task complete
                     state = self.state_mgr.mark_task_complete(state, params.get("task_id"), resp)
+                # guardrails check
+                allowed, failed = self.guardrails.check_all(state.__dict__ if hasattr(state, "__dict__") else {}, {"tool": action_type, "params": params}, cost=0.0)
+                if not allowed:
+                    # log and mark task failed
+                    from agent_framework.observability import logger
+
+                    logger.info(f"guardrails blocked action={action} failures={failed}")
+                    if state.active_tasks:
+                        tid = state.active_tasks[0].id
+                        state = self.state_mgr.mark_task_complete(state, tid, result={"error": "guardrails_blocked", "details": failed})
+                    continue
+
+                # execute tool via executor
+                exec_res = self.tool_executor.execute(action_type, params or {}, timeout_sec=30)
+                metrics["tokens_used"] += exec_res.get("execution_time_ms", 0)
+                metrics["cost"] += 0.0
+
+                r = {"reasoning_output": exec_res.get("output"), "tokens_used": 0, "cost": 0.0}
                 iterations += 1
 
             t1 = time.time()
