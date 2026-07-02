@@ -1,0 +1,18 @@
+[project]
+name = "agent_framework"
+version = "0.0.1"
+description = "Agent framework backend package"
+requires-python = ">=3.11"
+authors = [ { name = "" } ]
+
+dependencies = [
+  "fastapi",
+  "sqlalchemy",
+  "httpx",
+  "pydantic",
+  "python-dotenv",
+  "pytest",
+]
+
+[project.scripts]
+agent = "agent_framework.core.agent:Agent"
