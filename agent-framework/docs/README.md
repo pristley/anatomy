@@ -9,6 +9,7 @@
   - `agent_framework/tools/validator.py` — added `SchemaValidator.validate_params`
   - `agent_framework/core/agent.py` — improved async event-loop handling during synchronous runs
 - Created PR [fix/backend-tests-impl](https://github.com/pristley/anatomy/pull/1) with these fixes; backend tests pass locally (`pytest`: 23 passed).
+ - Created PR [fix/backend-tests-impl](https://github.com/pristley/anatomy/pull/2) with these fixes; backend tests pass locally (`pytest`: agent-framework: 23 passed; backend: all tests passed).
 
 - Branch `fix/backend-tests-impl` (this branch):
   - Migrated `Agent` and `Message` persistence to SQLAlchemy models and ensured automatic table creation for local setups.
@@ -407,6 +408,10 @@ agent-framework/
 - [ ] Implement health check endpoint
 - [ ] Configure CORS & security headers
 
+ - [x] Set up basic middleware (auth, logging, error handling)
+ - [x] Implement health check endpoint
+ - [x] Configure CORS & security headers
+
 **Deliverable:** Running API server on localhost:8000
 
 **Estimated Time:** 4 weeks  
@@ -422,6 +427,8 @@ agent-framework/
 - [x] SQLite backend (agent_framework/memory/backends/sqlite.py)
 - [x] Embedding generation (OpenAI embedding helper present in agent_framework/memory/embeddings/openai.py)
 - [ ] Retrieval/RAG (similarity search not implemented / retrieval.py missing)
+
+ - [x] Retrieval/RAG (similarity search implemented in `memory/retrieval.py`; OpenAI adapter present)
 
 **Deliverable:** Agents can store and retrieve experiences
 
@@ -442,6 +449,8 @@ agent-framework/
   - [x] Math evaluation (agent_framework/tools/builtin/math_eval.py)
   - [ ] API calls (generic) (not present)
 
+   - [x] API calls (generic) implemented and hardened (`tools/builtin/api_call.py`)
+
 **Deliverable:** Agent can call tools safely with validation
 
 **Tests:**
@@ -459,6 +468,15 @@ agent-framework/
 - [ ] GET /agents/{id}/memory - Query memory
 - [ ] GET /tools - List available tools
 - [ ] POST /tools - Create custom tool
+
+ - [x] POST /agents - Create agent
+ - [x] GET /agents - List agents (backend/api/routes/agents.py)
+ - [x] GET /agents/{id} - Get agent details
+ - [x] DELETE /agents/{id} - Delete agent
+ - [x] POST /agents/{id}/messages - Send message (chat endpoints persist to DB when available)
+ - [x] GET /agents/{id}/memory - Query memory (basic retrieval wired)
+ - [x] GET /tools - List available tools
+ - [x] POST /tools - Create custom tool
 
 **Deliverable:** Full CRUD API for agents
 
@@ -503,6 +521,11 @@ agent-framework/
 - [ ] Database migrations (Alembic not configured)
 - [ ] Session management (session.py missing)
 - [ ] Async query support (not configured)
+
+ - [x] SQLAlchemy models (Agent and Message models present and persisted in `database/models.py`)
+ - [x] Session management (`database/session.py` present; local `create_all` for convenience)
+ - [ ] Database migrations (Alembic not configured)
+ - [ ] Async query support (not configured)
 
 **Deliverable:** Data persists across server restarts
 
@@ -797,6 +820,23 @@ Phase 5 (Frontend Part): Meta-Agent UI (2 days)
 - **Async:** asyncio, httpx
 - **Logging:** Python logging, JSON formatter
 - **Monitoring:** Prometheus, Jaeger
+
+## ✅ Verification & Validation
+
+- **Branch:** `fix/backend-tests-impl` pushed to origin and used for verification.
+- **Pull Request:** Created PR https://github.com/pristley/anatomy/pull/2 summarizing changes.
+- **Local tests:** Ran test suites locally:
+  - `agent-framework/backend` tests: 23 passed
+  - `backend` tests: all tests passed
+- **CI:** Added `.github/workflows/ci.yml` to run backend and agent-framework tests in a Python 3.11/3.12 matrix (jobs created in PR).
+- **Manual validation highlights:**
+  - FastAPI app starts; middleware (request id, auth, logging) is wired.
+  - Health endpoint responds on startup.
+  - SQLAlchemy `Agent` and `Message` models persist data; `database/session.py` creates tables locally.
+  - Memory retrieval module includes OpenAI embeddings adapter and similarity search hooks.
+  - `APICallTool` hardened to block private IPs and enforce TLS by default.
+
+If you want, I can (pick next): merge the PR, add Alembic migrations, or convert remaining in-memory components to DB-backed models and tests.
 
 ### Frontend
 - **Framework:** React 18+ or Vue 3
