@@ -15,6 +15,7 @@ dependencies = [
 	"httpx",
 	"pydantic",
 	"python-dotenv",
+	"PyJWT",
 ]
 
 [project.optional-dependencies]

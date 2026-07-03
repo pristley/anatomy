@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from .base import AbstractSemantic
+from .retrieval import SimpleEmbeddings, Retriever
 
 
 class SemanticMemory(AbstractSemantic):
     def __init__(self) -> None:
-        self._patterns: Dict[str, Dict] = {}
+        self._patterns: Dict[str, Dict[str, Any]] = {}
+        self._emb = SimpleEmbeddings()
+        self._retriever = Retriever(self._emb)
 
     def store(self, key: str, value) -> None:
         self._patterns[key] = value
@@ -18,13 +21,21 @@ class SemanticMemory(AbstractSemantic):
         return self._patterns.get(key)
 
     def search(self, query: str, top_k: int = 5) -> List[Dict]:
-        # naive search by substring match
-        out = [v for v in self._patterns.values() if query.lower() in v.get("pattern", "").lower()]
-        return out[:top_k]
+        # use embedding-based retriever for better results
+        docs = [{"id": k, **v} for k, v in self._patterns.items()]
+        return self._retriever.retrieve(query, docs, top_k=top_k)
 
     def store_pattern(self, category: str, pattern: str, confidence: float) -> None:
         pid = str(uuid.uuid4())
-        self._patterns[pid] = {"pattern_id": pid, "category": category, "pattern": pattern, "confidence": float(confidence), "created_at": int(time.time())}
+        embedding = self._emb.embed(pattern)
+        self._patterns[pid] = {
+            "pattern_id": pid,
+            "category": category,
+            "pattern": pattern,
+            "confidence": float(confidence),
+            "created_at": int(time.time()),
+            "embedding": embedding,
+        }
 
     def retrieve_patterns(self, category: str, min_confidence: float = 0.7) -> List[Dict]:
         now = int(time.time())

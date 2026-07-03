@@ -10,6 +10,15 @@
   - `agent_framework/core/agent.py` — improved async event-loop handling during synchronous runs
 - Created PR [fix/backend-tests-impl](https://github.com/pristley/anatomy/pull/1) with these fixes; backend tests pass locally (`pytest`: 23 passed).
 
+- Branch `fix/backend-tests-impl` (this branch):
+  - Migrated `Agent` and `Message` persistence to SQLAlchemy models and ensured automatic table creation for local setups.
+  - Replaced several in-memory services with DB-backed flows (agents, chat persistence) with in-memory fallbacks maintained for quick dev.
+  - Added `agent_framework/tools/builtin/api_call.py` hardened implementation to block private IPs and validate domains; TLS verification enforced by default.
+  - Added `backend/agent_framework/memory/retrieval.py` OpenAI embeddings adapter (uses `OPENAI_API_KEY` when present) and improved `SemanticRetrieval` behavior.
+  - Added `backend/api/routes/*` endpoints for agents, chat, memory and tools with optional DB integration and streaming/WebSocket support.
+  - Added GitHub Actions workflow `.github/workflows/ci.yml` to run both backend test suites in separate jobs (Python 3.11/3.12 matrix).
+  - Verified locally: `pytest` for both `backend` and `agent-framework/backend` test suites passed (agent-framework: 23 passed; backend: tests passed).
+
 ## 📁 Complete Folder Structure
 
 ```

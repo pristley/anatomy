@@ -12,3 +12,11 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# Ensure tables are created on startup for simple deployments / tests
+try:
+    from .base import Base
+    Base.metadata.create_all(bind=engine)
+except Exception:
+    pass
