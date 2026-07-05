@@ -29,8 +29,8 @@ Where:
 
 - **$\mathcal{S}$** = State space (all possible configurations the agent can be in)
 - **$\mathcal{A}^*$** = Action space (all tools/APIs the agent can invoke)
-- **$\mathcal{P}: \mathcal{S} \times \mathcal{A}^* \rightarrow \mathcal{S}$** = State transition function
-- **$\pi: \mathcal{S} \rightarrow \mathcal{A}^*$** = Policy function (reasoning → action selection)
+- **$$P: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{S}$$** = State transition function
+- **$\pi:\mathcal{S} \rightarrow \mathcal{A}^*$** = Policy function (reasoning → action selection)
 - **$\mathcal{M}: \mathcal{S} \times \text{History} \rightarrow \mathcal{S}'$** = Memory operator (learns from experience)
 - **$\mathcal{G}: \mathcal{S} \rightarrow \mathbb{R}$** = Goal evaluation function (measures success)
 - **$\mathcal{C}: \mathcal{S} \times \pi(\mathcal{S}) \rightarrow \{0,1\}$** = Compliance checker (safety guardrails)
@@ -248,11 +248,9 @@ $$k^* = \arg\max_{k \in KB} \cos(\text{embed}(q), \text{embed}(k))$$
 
 **Mathematical formulation:**
 
-$$r_t = \text{LLM}(s=\text{system\_prompt}, u=u_t, k=k_t, m=m_t^{\text{retrieved}})$$
+$$r_t = \text{LLM}(s=s_{\text{sys}}, u=u_t, k=k_t, m=m_{t, \text{retrieved}})$$
 
-**Examples:**
-- Chain-of-Thought: "Step 1: ... Step 2: ..."
-- ReAct: "Thought: ... Action: ... Observation: ..."
+$$Where:$r_t$: The generated strategy at time $t$.$\text{LLM}$: The large language model reasoning function.$s_{\text{sys}}$: The system prompt.$u_t$: The user input at time $t$.$k_t$: Contextual parameters or knowledge at time $t$.$m_{t, \text{retrieved}}$: Retrieved memory or external data at time $t$.
 
 **Key property:** Reasoning is deterministic given $(u_t, k_t, m_t)$
 
