@@ -213,7 +213,9 @@ class Agent:
                             # collect per-task outcomes for goal-level aggregation
                             if not hasattr(self, "_task_outcomes"):
                                 self._task_outcomes = []
-                            to = await self.evaluator.evaluate_task(tid, expected, actual, goal_id=state.goal)
+                            to = await self.evaluator.evaluate_task(
+                                tid, expected, actual, goal_id=state.goal
+                            )
                             self._task_outcomes.append(to)
                     except Exception:
                         # non-fatal; continue without evaluation
@@ -226,7 +228,9 @@ class Agent:
             goal_evaluation = None
             try:
                 if self.evaluator is not None and hasattr(self, "_task_outcomes"):
-                    goal_evaluation = await self.evaluator.evaluate_goal(state.goal or "", self._task_outcomes)
+                    goal_evaluation = await self.evaluator.evaluate_goal(
+                        state.goal or "", self._task_outcomes
+                    )
             except Exception:
                 goal_evaluation = None
             return {
@@ -265,7 +269,10 @@ class Agent:
         if agent_id in self._subagents:
             raise KeyError(f"subagent already exists: {agent_id}")
 
-        child = Agent(model_name=model_name or self.model_name, max_iterations=max_iterations or self.max_iterations)
+        child = Agent(
+            model_name=model_name or self.model_name,
+            max_iterations=max_iterations or self.max_iterations,
+        )
         # keep a backref to parent for context if needed
         child.parent = self
         self._subagents[agent_id] = child
@@ -275,7 +282,9 @@ class Agent:
     def list_subagents(self) -> List[str]:
         return list(self._subagents.keys())
 
-    def run_subagent_async(self, agent_id: str, query: str, user_id: str) -> asyncio.Task:
+    def run_subagent_async(
+        self, agent_id: str, query: str, user_id: str
+    ) -> asyncio.Task:
         """Start a subagent run concurrently and return the asyncio.Task."""
         if agent_id not in self._subagents:
             raise KeyError(f"unknown subagent: {agent_id}")
@@ -302,7 +311,11 @@ class Agent:
 
         while current_state.active_tasks:
             # find runnable tasks (all dependencies satisfied)
-            runnable = [t for t in current_state.active_tasks if set(t.dependencies).issubset(completed_ids(current_state))]
+            runnable = [
+                t
+                for t in current_state.active_tasks
+                if set(t.dependencies).issubset(completed_ids(current_state))
+            ]
             if not runnable:
                 # cyclic dependency or blocked; break to avoid infinite loop
                 break
@@ -312,7 +325,7 @@ class Agent:
                 # spawn a unique subagent per task
                 self._subagent_counter += 1
                 sid = f"sub-{t.id}-{self._subagent_counter}"
-                child = self.spawn_subagent(sid)
+                self.spawn_subagent(sid)
                 # start it; use task.name as query for simplicity
                 task = self.run_subagent_async(sid, t.name, user_id)
                 tasks_map[t.id] = (t, sid, task)
@@ -323,13 +336,18 @@ class Agent:
 
             # aggregate results and mark tasks complete
             for task_id, (task_def, sid, _t) in tasks_map.items():
-                res = results.get(task_id)
                 # find the corresponding completed result from gathered outputs
                 # mapping order preserved
                 out = completed.pop(0)
                 results[task_id] = out
                 # mark complete on state manager
-                current_state = self.state_manager.mark_task_complete(current_state, task_id, result={"output": out.get("output") if isinstance(out, dict) else out})
+                current_state = self.state_manager.mark_task_complete(
+                    current_state,
+                    task_id,
+                    result={
+                        "output": out.get("output") if isinstance(out, dict) else out
+                    },
+                )
 
         return current_state, results
 
