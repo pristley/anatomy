@@ -1,16 +1,17 @@
 # Infrastructure - Layer 11
 
 ## Overview
-TODO: Add overview
+Infrastructure layer contains adapters for external systems and deployment
+concerns such as database connections, external queues, or service
+configurations used by the agent runtime.
 
 ## Responsibilities
-TODO: Add responsibilities
-
-## Data Flow
-TODO: Add data flow diagram
+- Provide connectors and bootstrapping code for external dependencies.
+- Expose configuration-driven adapters for persistence and networking.
 
 ## Implementation Status
-TODO: Add status
+Implemented: basic session and database helpers exist; add-ons for cloud
+services can be introduced in this layer.
 
 ## Code Reference
-- File: `backend/agent_framework/core/layers/11_infrastructure.py`
+- Implementation: [backend/agent_framework/core/layers/11_infrastructure.py](backend/agent_framework/core/layers/11_infrastructure.py)

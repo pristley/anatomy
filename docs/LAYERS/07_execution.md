@@ -1,16 +1,17 @@
 # Execution - Layer 07
 
 ## Overview
-TODO: Add overview
+The Execution layer invokes tools and external actions. It wraps tool calls
+with scheduling and basic error handling.
 
 ## Responsibilities
-TODO: Add responsibilities
-
-## Data Flow
-TODO: Add data flow diagram
+- Execute tasks by invoking tool adapters or the reasoning core.
+- Collect execution results, tokens, and cost metrics.
+- Surface errors back to the resilience and decision layers for handling.
 
 ## Implementation Status
-TODO: Add status
+Implemented: integrates with builtin tools and external adapters under
+`backend/agent_framework/tools/`.
 
 ## Code Reference
-- File: `backend/agent_framework/core/layers/07_execution.py`
+- Implementation: [backend/agent_framework/core/layers/07_execution.py](backend/agent_framework/core/layers/07_execution.py)

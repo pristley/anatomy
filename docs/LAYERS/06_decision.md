@@ -1,16 +1,17 @@
 # Decision - Layer 06
 
 ## Overview
-TODO: Add overview
+Decision layer selects which tasks to run next based on the current state and
+policy. It mediates between planning and execution and may implement simple
+heuristics or policy lookups.
 
 ## Responsibilities
-TODO: Add responsibilities
-
-## Data Flow
-TODO: Add data flow diagram
+- Choose next tasks to schedule from the plan.
+- Apply policies (concurrency limits, priority overrides).
+- Coordinate with `StateManager` to avoid duplicate work.
 
 ## Implementation Status
-TODO: Add status
+Implemented: core decision heuristics exist; policy engine is pluggable.
 
 ## Code Reference
-- File: `backend/agent_framework/core/layers/06_decision.py`
+- Implementation: [backend/agent_framework/core/layers/06_decision.py](backend/agent_framework/core/layers/06_decision.py)

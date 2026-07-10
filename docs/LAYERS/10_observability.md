@@ -1,16 +1,17 @@
 # Observability - Layer 10
 
 ## Overview
-TODO: Add overview
+Observability provides logging, context propagation, and lightweight tracing
+helpers used by other layers to emit structured logs and metrics.
 
 ## Responsibilities
-TODO: Add responsibilities
-
-## Data Flow
-TODO: Add data flow diagram
+- Attach request and run-level context to log entries.
+- Provide helpers for structured logging and metrics emission.
+- Integrate with external telemetry backends if configured.
 
 ## Implementation Status
-TODO: Add status
+Implemented: context helpers and logger wrappers are available in the
+observability layer.
 
 ## Code Reference
-- File: `backend/agent_framework/core/layers/10_observability.py`
+- Implementation: [backend/agent_framework/core/layers/10_observability.py](backend/agent_framework/core/layers/10_observability.py)

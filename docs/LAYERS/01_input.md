@@ -1,16 +1,21 @@
 # Input - Layer 01
 
 ## Overview
-TODO: Add overview
+Layer 01 is responsible for ingesting and normalizing external inputs (HTTP
+requests, CLI arguments, or example scripts) into the internal `Query`/`Goal`
+structures used by the pipeline.
 
 ## Responsibilities
-TODO: Add responsibilities
+- Validate and sanitize incoming payloads.
+- Map external fields into the agent's internal goal/task model.
+- Attach request metadata (user id, request id) to the processing context.
 
 ## Data Flow
-TODO: Add data flow diagram
+- Receives raw input -> performs schema validation and normalization -> emits
+	a canonical `Goal` object for downstream layers.
 
 ## Implementation Status
-TODO: Add status
+Implemented: see code reference for the current behavior and examples.
 
 ## Code Reference
-- File: `backend/agent_framework/core/layers/01_input.py`
+- Implementation: [backend/agent_framework/core/layers/01_input.py](backend/agent_framework/core/layers/01_input.py)

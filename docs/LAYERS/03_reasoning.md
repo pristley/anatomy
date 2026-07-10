@@ -1,16 +1,18 @@
 # Reasoning - Layer 03
 
 ## Overview
-TODO: Add overview
+The Reasoning layer is the model-backed component that performs higher-level
+inference, plan refinement, and prompt construction for the agent's
+reasoning core.
 
 ## Responsibilities
-TODO: Add responsibilities
-
-## Data Flow
-TODO: Add data flow diagram
+- Compose prompts and interact with the reasoning/model client.
+- Convert task descriptions into model inputs and interpret model outputs.
+- Provide contextual reasoning support to the planner and executor.
 
 ## Implementation Status
-TODO: Add status
+Implemented: integrates with the configured reasoning core; swap-in
+different model clients via configuration.
 
 ## Code Reference
-- File: `backend/agent_framework/core/layers/03_reasoning.py`
+- Implementation: [backend/agent_framework/core/layers/03_reasoning.py](backend/agent_framework/core/layers/03_reasoning.py)
