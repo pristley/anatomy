@@ -112,7 +112,9 @@ class CircuitBreaker:
         if self.state == CircuitState.OPEN:
             # Try recovery after timeout
             if self.last_failure_time:
-                elapsed = (datetime.now(timezone.utc) - self.last_failure_time).total_seconds()
+                elapsed = (
+                    datetime.now(timezone.utc) - self.last_failure_time
+                ).total_seconds()
                 if elapsed > self.timeout:
                     self.state = CircuitState.HALF_OPEN
                     self.success_count = 0  # Reset for testing
