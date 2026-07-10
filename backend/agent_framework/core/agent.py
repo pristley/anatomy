@@ -108,3 +108,25 @@ class Agent:
 
 
 __all__ = ["Agent"]
+
+
+class AgentCoordinator:
+    """Lightweight coordinator for managing multiple Agent instances.
+
+    This is a small helper for tests and lightweight orchestration. Replace
+    with a more featureful implementation as needed.
+    """
+
+    def __init__(self) -> None:
+        self._agents: dict[str, Agent] = {}
+
+    def register(self, agent_id: str, agent: Agent) -> None:
+        self._agents[agent_id] = agent
+
+    def run_agent(self, agent_id: str, query: str, user_id: str):
+        agent = self._agents.get(agent_id)
+        if agent is None:
+            raise KeyError(f"agent not registered: {agent_id}")
+        return agent.run(query, user_id)
+
+__all__.append("AgentCoordinator")
