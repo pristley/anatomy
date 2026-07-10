@@ -34,6 +34,7 @@ _topological_sort = _load_from_layers("04_planning.py", "topological_sort")
 _StateManager = _load_from_layers("05_state.py", "StateManager")
 _DecisionEngine = _load_from_layers("06_decision.py", "DecisionEngine")
 ClaudeClient = _load_from_layers("../interfaces/claude_client.py", "ClaudeClient")
+_ExecutionEngine = _load_from_layers("07_execution.py", "ExecutionEngine")
 
 
 class Agent:
@@ -108,6 +109,8 @@ class Agent:
 
 
 __all__ = ["Agent"]
+
+__all__.append("ExecutionEngine")
 
 
 class AgentCoordinator:
