@@ -11,7 +11,7 @@ init: ## Create virtualenv and install dependencies (backend + frontend)
 	$(PIP) install --upgrade pip setuptools
 	@if [ -f backend/requirements.txt ]; then $(PIP) install -r backend/requirements.txt; fi
 	@if [ -d frontend ]; then (cd frontend && $(NPM) install); fi
-	@if [ -d frontend ]; then (cd frontend && $(NPM) install) || echo "frontend install failed, continuing"; fi
+	@if [ -d frontend ] && [ "$(INSTALL_FRONTEND)" = "1" ]; then (cd frontend && $(NPM) install) || echo "frontend install failed, continuing"; else echo "skipping frontend install (set INSTALL_FRONTEND=1 to enable)"; fi
 
 install-backend: ## Install backend dependencies into venv
 	@test -d $(VENV) || python -m venv $(VENV)
@@ -20,7 +20,7 @@ install-backend: ## Install backend dependencies into venv
 
 install-frontend: ## Install frontend deps (if frontend exists)
 	@if [ -d frontend ]; then (cd frontend && $(NPM) install); else echo "no frontend directory"; fi
-	@if [ -d frontend ]; then (cd frontend && $(NPM) install) || echo "frontend install failed, continuing"; fi
+	@if [ -d frontend ]; then (cd frontend && $(NPM) install) || echo "frontend install failed, continuing"; else echo "no frontend directory"; fi
 
 lint: ## Run linting (ruff + black) — requires tools installed in venv
 	@echo "Running lints..."
