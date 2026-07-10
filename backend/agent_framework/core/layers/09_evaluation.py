@@ -85,9 +85,7 @@ class EvaluationEngine:
         """
         sim = self.similarity(expected, actual)
         success = sim >= self.success_threshold
-        summary = (
-            f"success={success}; similarity={sim:.3f}; expected_len={len(expected)}; actual_len={len(actual)}"
-        )
+        summary = f"success={success}; similarity={sim:.3f}; expected_len={len(expected)}; actual_len={len(actual)}"
         return TaskOutcome(
             task_id=task_id,
             goal_id=goal_id,
@@ -97,7 +95,9 @@ class EvaluationEngine:
             metadata=metadata or {},
         )
 
-    async def evaluate_goal(self, goal_id: str, task_outcomes: Sequence[TaskOutcome]) -> GoalEvaluation:
+    async def evaluate_goal(
+        self, goal_id: str, task_outcomes: Sequence[TaskOutcome]
+    ) -> GoalEvaluation:
         """Aggregate multiple `TaskOutcome`s into a `GoalEvaluation`.
 
         Computes an overall score as the mean similarity, and generates
@@ -105,13 +105,25 @@ class EvaluationEngine:
         """
         outcomes = list(task_outcomes)
         if not outcomes:
-            return GoalEvaluation(goal_id=goal_id, overall_score=0.0, feedback="No tasks evaluated.", task_outcomes=[])
+            return GoalEvaluation(
+                goal_id=goal_id,
+                overall_score=0.0,
+                feedback="No tasks evaluated.",
+                task_outcomes=[],
+            )
 
         overall_score = float(sum(o.similarity for o in outcomes) / len(outcomes))
         feedback = self.generate_feedback(goal_id, overall_score, outcomes)
-        return GoalEvaluation(goal_id=goal_id, overall_score=overall_score, feedback=feedback, task_outcomes=outcomes)
+        return GoalEvaluation(
+            goal_id=goal_id,
+            overall_score=overall_score,
+            feedback=feedback,
+            task_outcomes=outcomes,
+        )
 
-    def generate_feedback(self, goal_id: str, overall_score: float, outcomes: Sequence[TaskOutcome]) -> str:
+    def generate_feedback(
+        self, goal_id: str, overall_score: float, outcomes: Sequence[TaskOutcome]
+    ) -> str:
         """Create human-friendly feedback based on the overall score and outcomes."""
         low = [o for o in outcomes if o.similarity < self.success_threshold]
         parts: List[str] = []
@@ -120,53 +132,22 @@ class EvaluationEngine:
         if overall_score >= 0.95:
             parts.append("Excellent — the task outputs closely match expectations.")
         elif overall_score >= 0.8:
-            parts.append("Good — minor discrepancies detected. Consider small prompt or configuration tweaks.")
+            parts.append(
+                "Good — minor discrepancies detected. Consider small prompt or configuration tweaks."
+            )
         else:
-            parts.append("Below expectations — review the following tasks for improvement:")
+            parts.append(
+                "Below expectations — review the following tasks for improvement:"
+            )
             for o in low:
-                parts.append(f" - {o.task_id}: similarity={o.similarity:.3f}; summary={o.summary}")
-            parts.append("Suggested actions: refine prompts, increase examples/contexts, or add validation checks.")
+                parts.append(
+                    f" - {o.task_id}: similarity={o.similarity:.3f}; summary={o.summary}"
+                )
+            parts.append(
+                "Suggested actions: refine prompts, increase examples/contexts, or add validation checks."
+            )
 
         return "\n".join(parts)
 
 
 __all__ = ["EvaluationEngine", "TaskOutcome", "GoalEvaluation"]
-"""Layer 9: Evaluation & scoring of outcomes."""
-
-from __future__ import annotations
-
-from typing import Any, Dict
-
-
-class EvaluationEngine:
-    def __init__(self) -> None:
-        pass
-
-    def evaluate(
-        self, outcome: Dict[str, Any], criteria: Dict[str, Any] | None = None
-    ) -> float:
-        """Return a score between 0.0 and 1.0 for the given outcome.
-
-        Simple heuristic: prefer status 'ok' and non-empty output.
-        """
-        criteria = criteria or {}
-        status = outcome.get("status")
-        output = outcome.get("output")
-
-        if status != "ok":
-            return 0.0
-
-        if output is None:
-            return 0.0
-
-        # length-based signal
-        try:
-            length = len(str(output))
-        except Exception:
-            length = 0
-
-        score = min(1.0, max(0.0, length / 200.0))
-        return float(score)
-
-
-__all__ = ["EvaluationEngine"]

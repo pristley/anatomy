@@ -1,4 +1,3 @@
-import asyncio
 import pytest
 
 from agent_framework.core.agent import Agent

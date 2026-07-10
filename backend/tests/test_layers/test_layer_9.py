@@ -20,11 +20,15 @@ async def test_similarity_and_empty_cases():
 @pytest.mark.asyncio
 async def test_evaluate_task_success_and_failure():
     engine = EvaluationEngine(success_threshold=0.8)
-    good = await engine.evaluate_task("t1", "The cat sat on the mat.", "The cat sat on the mat.")
+    good = await engine.evaluate_task(
+        "t1", "The cat sat on the mat.", "The cat sat on the mat."
+    )
     assert good.success is True
     assert pytest.approx(good.similarity, rel=1e-6) == 1.0
 
-    bad = await engine.evaluate_task("t2", "The cat sat on the mat.", "Completely unrelated output.")
+    bad = await engine.evaluate_task(
+        "t2", "The cat sat on the mat.", "Completely unrelated output."
+    )
     assert bad.success is False
 
 
