@@ -48,3 +48,10 @@ work.
 
 ## [0.1.0-alpha-cleanup] - 2026-07-10
 - Repository cleanup and restructure; added middleware package, memory module skeleton, agent config, and Makefile.
+## [0.1.1] - 2026-07-10
+- Released changes merged to `main`:
+  - Added `ExecutionEngine` and integrated it into the agent orchestrator.
+  - Added CI workflow and pinned formatting/linting tools (`black`, `ruff`).
+  - Applied repository-wide lint/format fixes and migrated Pydantic validators to v2.
+  - Added unit tests for the execution layer and updated docs (`CHANGELOG.md`).
+  - Triggered remote CI run to validate the branch protection and CI checks.
