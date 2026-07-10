@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Request, Query, Body
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict, Any
 import uuid
 import re
@@ -33,7 +33,7 @@ class AgentCreate(BaseModel):
     description: Optional[str] = None
     config: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
-    @validator("name")
+    @field_validator("name")
     def name_must_be_valid(cls, v: str) -> str:
         if not re.match(r"^\w+$", v):
             raise ValueError("name must be alphanumeric or underscore")
