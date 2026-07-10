@@ -41,6 +41,7 @@ ClaudeClient = _load_from_layers("../interfaces/claude_client.py", "ClaudeClient
 _ExecutionEngine = _load_from_layers("07_execution.py", "ExecutionEngine")
 _ExecutionStatus = _load_from_layers("07_execution.py", "ExecutionStatus")
 _ResilienceLayer = _load_from_layers("08_resilience.py", "ResilienceLayer")
+_EvaluationEngine = _load_from_layers("09_evaluation.py", "EvaluationEngine")
 
 
 class Agent:
@@ -66,6 +67,11 @@ class Agent:
             self.resilience = _ResilienceLayer()
         except Exception:
             self.resilience = None
+        # Evaluation engine for outcome assessment (Layer 9)
+        try:
+            self.evaluator = _EvaluationEngine()
+        except Exception:
+            self.evaluator = None
 
     async def _run_async(self, query: str, user_id: str) -> Dict[str, Any]:
         start_all = time.monotonic()
@@ -188,16 +194,40 @@ class Agent:
                     state = self.state_manager.mark_task_complete(
                         state, tid, result={"output": r.get("reasoning_output")}
                     )
+                    # Evaluate outcome if evaluation engine is available
+                    try:
+                        if self.evaluator is not None:
+                            expected = ""
+                            # try to infer expected from params if provided
+                            if isinstance(params, dict):
+                                expected = params.get("expected", "") or ""
+                            actual = r.get("reasoning_output") or ""
+                            # collect per-task outcomes for goal-level aggregation
+                            if not hasattr(self, "_task_outcomes"):
+                                self._task_outcomes = []
+                            to = await self.evaluator.evaluate_task(tid, expected, actual, goal_id=state.goal)
+                            self._task_outcomes.append(to)
+                    except Exception:
+                        # non-fatal; continue without evaluation
+                        pass
                     last_output = r.get("reasoning_output")
 
             total_ms = int((time.monotonic() - start_all) * 1000)
             metrics["duration_ms"] = total_ms
+            # produce goal-level evaluation if available
+            goal_evaluation = None
+            try:
+                if self.evaluator is not None and hasattr(self, "_task_outcomes"):
+                    goal_evaluation = await self.evaluator.evaluate_goal(state.goal or "", self._task_outcomes)
+            except Exception:
+                goal_evaluation = None
             return {
                 "success": True,
                 "output": last_output,
                 "metrics": metrics,
                 "cost": metrics.get("cost", 0.0),
                 "execution_time_ms": total_ms,
+                "evaluation": goal_evaluation,
             }
 
         except Exception as exc:  # pragma: no cover - orchestration error handling
