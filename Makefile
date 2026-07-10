@@ -32,7 +32,7 @@ format: ## Format code (ruff + black)
 test: test-backend test-frontend
 
 test-backend: ## Run backend tests
-	PYTHONPATH=.:backend pytest backend/tests/
+	PYTHONPATH=.:backend $(PY) -m pytest backend/tests/
 
 test-frontend: ## Run frontend tests
 	@if [ -d frontend ]; then (cd frontend && $(NPM) test); else echo "no frontend tests"; fi
