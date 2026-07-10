@@ -37,6 +37,14 @@ jobs:
           if [ -f backend/requirements.txt ]; then .venv/bin/pip install -r backend/requirements.txt; fi
           .venv/bin/pip install ruff black pytest pytest-asyncio
 
+      - name: Install pre-commit
+        run: |
+          .venv/bin/pip install pre-commit
+
+      - name: Run pre-commit checks
+        run: |
+          .venv/bin/pre-commit run --all-files --show-diff-on-failure
+
       - name: Lint (ruff + black check)
         run: |
           .venv/bin/ruff check .
