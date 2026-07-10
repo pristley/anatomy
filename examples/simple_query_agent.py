@@ -22,7 +22,7 @@ BACKEND = os.path.join(ROOT, "backend")
 if BACKEND not in sys.path:
     sys.path.insert(0, BACKEND)
 
-from agent_framework.core.agent import Agent
+from agent_framework.core.agent import Agent  # noqa: E402
 
 
 def run_simple_query(query: str, user_id: str) -> dict:

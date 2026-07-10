@@ -21,7 +21,7 @@ BACKEND = os.path.join(ROOT, "backend")
 if BACKEND not in sys.path:
     sys.path.insert(0, BACKEND)
 
-from agent_framework.core.agent import Agent, AgentCoordinator
+from agent_framework.core.agent import Agent, AgentCoordinator  # noqa: E402
 
 
 async def run_coordinator_demo() -> Dict[str, Any]:
@@ -62,7 +62,10 @@ async def run_coordinator_demo() -> Dict[str, Any]:
             "error": res.get("error") if not res.get("success", True) else None,
         }
 
-    summary = {"agent-one": summarize("agent-one", r1), "agent-two": summarize("agent-two", r2)}
+    summary = {
+        "agent-one": summarize("agent-one", r1),
+        "agent-two": summarize("agent-two", r2),
+    }
     return {"results": {"agent-one": r1, "agent-two": r2}, "summary": summary}
 
 
@@ -102,8 +105,6 @@ Expected output:
 Status:
     TODO: Implement after core layers are complete
 """
-
-import asyncio
 
 
 async def main():

@@ -20,7 +20,7 @@ if BACKEND not in sys.path:
     sys.path.insert(0, BACKEND)
 
 # Import the safe math evaluator tool
-from agent_framework.tools.builtin.math_eval import evaluate_expression
+from agent_framework.tools.builtin.math_eval import evaluate_expression  # noqa: E402
 
 
 def run_expressions(exprs: list[str]) -> Dict[str, Any]:
@@ -43,9 +43,16 @@ def run_expressions(exprs: list[str]) -> Dict[str, Any]:
             total_tokens += tokens
             total_cost += cost
         except Exception as exc:
-            results[f"expr_{i}"] = {"expression": expr, "success": False, "error": str(exc)}
+            results[f"expr_{i}"] = {
+                "expression": expr,
+                "success": False,
+                "error": str(exc),
+            }
 
-    return {"results": results, "metrics": {"tokens_used": total_tokens, "cost": total_cost}}
+    return {
+        "results": results,
+        "metrics": {"tokens_used": total_tokens, "cost": total_cost},
+    }
 
 
 def main() -> None:

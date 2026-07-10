@@ -11,7 +11,6 @@ Run with:
 import os
 import sys
 import json
-import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -21,9 +20,12 @@ BACKEND = os.path.join(ROOT, "backend")
 if BACKEND not in sys.path:
     sys.path.insert(0, BACKEND)
 
-from agent_framework.memory.episodic import EpisodicMemory, Episode
-from agent_framework.memory.semantic import SemanticMemory, SemanticRecord
-from agent_framework.memory.retrieval import SimpleEmbeddings, SemanticRetrieval
+from agent_framework.memory.episodic import EpisodicMemory, Episode  # noqa: E402
+from agent_framework.memory.semantic import SemanticMemory, SemanticRecord  # noqa: E402
+from agent_framework.memory.retrieval import (  # noqa: E402
+    SimpleEmbeddings,
+    SemanticRetrieval,
+)  # noqa: E402
 
 
 def demo_episodic() -> Any:
@@ -43,22 +45,42 @@ def demo_episodic() -> Any:
 
     # retrieve recent episodes
     recent = mem.retrieve("query")
-    return [dict(query=e.query, reasoning=e.reasoning, outcome=e.outcome) for e in recent]
+    return [
+        dict(query=e.query, reasoning=e.reasoning, outcome=e.outcome) for e in recent
+    ]
 
 
 async def demo_semantic() -> Any:
     # semantic memory and simple retriever
     sem = SemanticMemory()
     # store some semantic records (topic/pattern)
-    sem.store(SemanticRecord(text="How to boil an egg", embedding=[0.1] * 128, topic="cooking", success_rate=0.9))
-    sem.store(SemanticRecord(text="Photosynthesis overview", embedding=[0.2] * 128, topic="biology", success_rate=0.95))
+    sem.store(
+        SemanticRecord(
+            text="How to boil an egg",
+            embedding=[0.1] * 128,
+            topic="cooking",
+            success_rate=0.9,
+        )
+    )
+    sem.store(
+        SemanticRecord(
+            text="Photosynthesis overview",
+            embedding=[0.2] * 128,
+            topic="biology",
+            success_rate=0.95,
+        )
+    )
 
     # Use SemanticRetrieval with SimpleEmbeddings to store and retrieve entries
     retriever = SemanticRetrieval(embedding_model=SimpleEmbeddings(), backend=None)
 
     # store a few memory entries using retriever.store_memory
-    await retriever.store_memory({"content": "I boiled an egg today", "agent_id": "demo"})
-    await retriever.store_memory({"content": "I studied photosynthesis", "agent_id": "demo"})
+    await retriever.store_memory(
+        {"content": "I boiled an egg today", "agent_id": "demo"}
+    )
+    await retriever.store_memory(
+        {"content": "I studied photosynthesis", "agent_id": "demo"}
+    )
 
     # retrieve similar to 'boil an egg'
     similar = await retriever.retrieve_similar("boil an egg", agent_id="demo", top_k=5)
