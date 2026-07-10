@@ -30,16 +30,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install backend dependencies
+      - name: Install backend dependencies and dev tools
         run: |
           python -m venv .venv
           .venv/bin/pip install --upgrade pip setuptools
           if [ -f backend/requirements.txt ]; then .venv/bin/pip install -r backend/requirements.txt; fi
+          .venv/bin/pip install ruff black pytest pytest-asyncio
 
       - name: Lint (ruff + black check)
-        run: make lint
+        run: |
+          .venv/bin/ruff check .
+          .venv/bin/black --check .
 
       - name: Run backend tests
-        run: make test-backend
+        run: |
+          export PYTHONPATH=.:backend
+          .venv/bin/pytest backend/tests/ -q
         env:
           CI: true
