@@ -18,3 +18,43 @@ eggs/
 
 # macOS
 .DS_Store
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python env files
+*.env
+*.env.*
+
+# Unit test / coverage reports
+.tox/
+.nox/
+.coverage
+.cache
+.pytest_cache/
+coverage.xml
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+*.log
+
+# Misc
+*.sqlite3
+*.db
+*.pyc
+*.pyo
+*.orig
+
+# frontend caches
+.parcel-cache/
+.next/
+.turbo/
+
