@@ -158,6 +158,64 @@ class TestExecutionRetry:
         assert result.status in (exec_mod.ExecutionStatus.TIMEOUT, exec_mod.ExecutionStatus.ERROR)
 
 
+    @pytest.mark.asyncio
+    async def test_no_retries_returns_no_result(self, mock_tool):
+        """If max_retries is 0, execute_with_retries should return a 'no result' error."""
+        # engine with zero retries
+        import importlib.util, sys
+        backend_root = Path(__file__).resolve().parents[2]
+        if str(backend_root) not in sys.path:
+            sys.path.insert(0, str(backend_root))
+        mod = importlib.util.spec_from_file_location("layer07", str(backend_root / "agent_framework" / "core" / "layers" / "07_execution.py"))
+        module = importlib.util.module_from_spec(mod)
+        mod.loader.exec_module(module)
+        engine = module.ExecutionEngine(timeout_ms=1000, max_retries=0)
+
+        async def always_fail(**kwargs):
+            raise RuntimeError("fail")
+
+        mock_tool.run = always_fail
+        res = await engine.execute_with_retries(mock_tool, {})
+        assert res.status == module.ExecutionStatus.ERROR
+        assert "No result produced" in (res.error or "")
+
+
+class TestExecutionExtras:
+    @pytest.mark.asyncio
+    async def test_run_async_method_preferred(self, exec_mod):
+        """If a tool exposes `run_async`, it should be called instead of `run`."""
+        engine = exec_mod.ExecutionEngine(timeout_ms=1000)
+        tool = MagicMock()
+        tool.validate_params.return_value = None
+        tool.estimated_cost.return_value = 0.0
+        tool.run_async = AsyncMock(return_value={"ok": True})
+
+        res = await engine.execute(tool, {})
+        assert res.status == exec_mod.ExecutionStatus.SUCCESS
+        tool.run_async.assert_awaited()
+
+    @pytest.mark.asyncio
+    async def test_estimated_cost_exception_results_zero_cost(self, execution_engine, mock_tool, exec_mod):
+        """If estimated_cost raises, cost in metrics should be 0.0."""
+        async def simple(**kwargs):
+            return {"k": "v"}
+
+        mock_tool.run = simple
+        mock_tool.estimated_cost.side_effect = Exception("no cost")
+        res = await execution_engine.execute(mock_tool, {})
+        assert res.metrics.cost == 0.0
+
+    @pytest.mark.asyncio
+    async def test_cancelled_error_path(self, execution_engine, mock_tool, exec_mod):
+        """Tool raising CancelledError should produce CANCELLED status."""
+        async def canceller(**kwargs):
+            raise asyncio.CancelledError()
+
+        mock_tool.run = canceller
+        res = await execution_engine.execute(mock_tool, {})
+        assert res.status == exec_mod.ExecutionStatus.CANCELLED
+
+
 class TestExecutionMetrics:
     """Tests for metric collection."""
 
