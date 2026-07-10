@@ -13,7 +13,8 @@ from agent_framework.core.types import ExecutionMetrics
 
 
 class ToolProtocol(Protocol):
-    def validate_params(self, params: Dict[str, Any]) -> Optional[str]: ...
+    def validate_params(self, params: Dict[str, Any]) -> Optional[str]:
+        ...
 
     def run(self, **params: Any) -> Any:  # sync
         ...
@@ -21,7 +22,8 @@ class ToolProtocol(Protocol):
     async def run_async(self, **params: Any) -> Any:  # async alternative name
         ...
 
-    def estimated_cost(self, **params: Any) -> float: ...
+    def estimated_cost(self, **params: Any) -> float:
+        ...
 
 
 class ExecutionStatus(str, Enum):

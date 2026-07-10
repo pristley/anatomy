@@ -59,13 +59,13 @@ from agent_framework import Agent
 async def main():
     # Create an agent
     agent = Agent(model_name="claude-3-5-sonnet-20241022")
-    
+
     # Run a query
     result = await agent._run_async(
         query="What are the top 3 customer retention strategies?",
         user_id="user_001"
     )
-    
+
     # Get results
     print(f"Output: {result['output']}")
     print(f"Cost: ${result['metrics']['cost']:.4f}")
@@ -84,14 +84,14 @@ from agent_framework import Agent
 async def main():
     # Create an agent
     agent = Agent(model_name="claude-3-5-sonnet-20241022")
-    
+
     # Run with automatic subagent parallelization
     result = await agent.run_with_subagents(
         query="Analyze customer churn: fetch data, predict churn, recommend actions",
         user_id="user_001",
         allow_parallelization=True
     )
-    
+
     # Get parallel results
     print(f"Subagent results: {result['subagent_results']}")
     print(f"Total cost: ${result['metrics']['cost']:.4f}")
@@ -188,7 +188,7 @@ Final Output
 
 ```python
 # Query: "Analyze customer churn and recommend actions"
-# 
+#
 # Automatic decomposition:
 #   Task 1: Query database (independent)
 #   Task 2: Run ML model (depends on Task 1)
