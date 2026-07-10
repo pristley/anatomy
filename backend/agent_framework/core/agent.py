@@ -54,7 +54,11 @@ class Agent:
         self.input_layer = _InputLayer()
         self.understanding = _UnderstandingLayer()
         self.planner = PlanningDecomposition()
-        self.state_manager = None
+        # state manager available for orchestration and tests
+        try:
+            self.state_manager = _StateManager(agent_id=None)
+        except Exception:
+            self.state_manager = None
         self.decision_engine = _DecisionEngine()
         # Execution engine for tool invocation
         try:
@@ -75,6 +79,7 @@ class Agent:
         # Subagent management
         self._subagents: Dict[str, Agent] = {}
         self._subagent_tasks: Dict[str, List[asyncio.Task]] = {}
+        self._subagent_counter = 0
 
     async def _run_async(self, query: str, user_id: str) -> Dict[str, Any]:
         start_all = time.monotonic()
@@ -277,6 +282,56 @@ class Agent:
         task = asyncio.create_task(self._subagents[agent_id]._run_async(query, user_id))
         self._subagent_tasks.setdefault(agent_id, []).append(task)
         return task
+
+    async def run_with_subagents(self, state, user_id: str):
+        """Run tasks in the provided `state` using subagents for parallelizable tasks.
+
+        Simple dependency resolution: tasks with no unmet dependencies run concurrently.
+        Returns final state and a mapping of task_id -> result.
+        """
+        results: Dict[str, Any] = {}
+
+        # Ensure there is a state manager available for marking task completion
+        if self.state_manager is None:
+            self.state_manager = _StateManager(agent_id=user_id)
+
+        def completed_ids(s):
+            return {t.id for t in s.completed_tasks}
+
+        current_state = state
+
+        while current_state.active_tasks:
+            # find runnable tasks (all dependencies satisfied)
+            runnable = [t for t in current_state.active_tasks if set(t.dependencies).issubset(completed_ids(current_state))]
+            if not runnable:
+                # cyclic dependency or blocked; break to avoid infinite loop
+                break
+
+            tasks_map = {}
+            for t in runnable:
+                # spawn a unique subagent per task
+                self._subagent_counter += 1
+                sid = f"sub-{t.id}-{self._subagent_counter}"
+                child = self.spawn_subagent(sid)
+                # start it; use task.name as query for simplicity
+                task = self.run_subagent_async(sid, t.name, user_id)
+                tasks_map[t.id] = (t, sid, task)
+
+            # wait for all runnable tasks to complete
+            awaited = [v[2] for v in tasks_map.values()]
+            completed = await asyncio.gather(*awaited)
+
+            # aggregate results and mark tasks complete
+            for task_id, (task_def, sid, _t) in tasks_map.items():
+                res = results.get(task_id)
+                # find the corresponding completed result from gathered outputs
+                # mapping order preserved
+                out = completed.pop(0)
+                results[task_id] = out
+                # mark complete on state manager
+                current_state = self.state_manager.mark_task_complete(current_state, task_id, result={"output": out.get("output") if isinstance(out, dict) else out})
+
+        return current_state, results
 
 
 __all__ = ["Agent"]
