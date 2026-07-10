@@ -158,7 +158,10 @@ class Agent:
                             tool, {}, request_id=user_id
                         )
 
-                    if result is not None and getattr(result, "status", None) == _ExecutionStatus.SUCCESS:
+                    if (
+                        result is not None
+                        and getattr(result, "status", None) == _ExecutionStatus.SUCCESS
+                    ):
                         r = result.output
                         metrics["tokens_used"] += getattr(
                             result.metrics, "tokens_used", 0

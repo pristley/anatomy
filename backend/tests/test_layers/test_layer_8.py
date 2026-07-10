@@ -3,7 +3,6 @@ import importlib
 
 import pytest
 
-
 mod = importlib.import_module("agent_framework.core.layers.08_resilience")
 CircuitBreaker = mod.CircuitBreaker
 CircuitBreakerOpen = mod.CircuitBreakerOpen
