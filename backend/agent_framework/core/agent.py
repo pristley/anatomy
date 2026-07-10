@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import time
+import asyncio
 from typing import Any, Dict
 
 from importlib.util import spec_from_file_location, module_from_spec
+import sys
 from pathlib import Path
 
 
@@ -22,6 +24,8 @@ def _load_from_layers(filename: str, attr: str):
         raise ImportError(f"Cannot load module {filename}")
     mod = module_from_spec(spec)
     mod.__package__ = pkg
+    # register module so decorators and dataclasses can find the module entry
+    sys.modules[mod_name] = mod
     spec.loader.exec_module(mod)
     return getattr(mod, attr)
 
@@ -36,6 +40,7 @@ _DecisionEngine = _load_from_layers("06_decision.py", "DecisionEngine")
 ClaudeClient = _load_from_layers("../interfaces/claude_client.py", "ClaudeClient")
 _ExecutionEngine = _load_from_layers("07_execution.py", "ExecutionEngine")
 _ExecutionStatus = _load_from_layers("07_execution.py", "ExecutionStatus")
+_ResilienceLayer = _load_from_layers("08_resilience.py", "ResilienceLayer")
 
 
 class Agent:
@@ -56,6 +61,11 @@ class Agent:
         except Exception:
             # fallback if layer not available
             self.execution_engine = None
+        # Resilience layer for fault isolation and recovery
+        try:
+            self.resilience = _ResilienceLayer()
+        except Exception:
+            self.resilience = None
 
     async def _run_async(self, query: str, user_id: str) -> Dict[str, Any]:
         start_all = time.monotonic()
@@ -118,10 +128,37 @@ class Agent:
                 tool = _ReasonerTool(self.reasoner, task_text, confidence)
 
                 if self.execution_engine is not None:
-                    result = await self.execution_engine.execute(
-                        tool, {}, request_id=user_id
-                    )
-                    if result.status == _ExecutionStatus.SUCCESS:
+                    # Prefer executing under resilience coordination so circuit
+                    # breakers can isolate failing services and suggest recovery.
+                    if self.resilience is not None:
+                        res = await self.resilience.execute_with_resilience(
+                            self.execution_engine.execute,
+                            action or "tool",
+                            tool,
+                            {},
+                            request_id=user_id,
+                        )
+                        if res.get("success"):
+                            result = res.get("output")
+                        else:
+                            # recovery strategy handling: try a single retry for transient errors
+                            strategy = res.get("recovery_strategy")
+                            if strategy == "retry_with_backoff":
+                                await asyncio.sleep(0.05)
+                                try:
+                                    result = await self.execution_engine.execute(
+                                        tool, {}, request_id=user_id
+                                    )
+                                except Exception:
+                                    result = None
+                            else:
+                                result = None
+                    else:
+                        result = await self.execution_engine.execute(
+                            tool, {}, request_id=user_id
+                        )
+
+                    if result is not None and getattr(result, "status", None) == _ExecutionStatus.SUCCESS:
                         r = result.output
                         metrics["tokens_used"] += getattr(
                             result.metrics, "tokens_used", 0
