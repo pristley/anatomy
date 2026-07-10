@@ -1,4 +1,5 @@
 """Layer 4: Planning & decomposition."""
+
 from __future__ import annotations
 
 from typing import List, Dict
@@ -21,9 +22,18 @@ class PlanningDecomposition:
         for ln in lines:
             if ln.lower().startswith("step") or ln.lower().startswith("- step"):
                 # use the whole line as name
-                tid = f"task_{len(tasks)+1}"
+                tid = f"task_{len(tasks) + 1}"
                 name = ln
-                tasks.append(TaskDef(id=tid, name=name, dependencies=[], action_type="tool", parameters={}, status="pending"))
+                tasks.append(
+                    TaskDef(
+                        id=tid,
+                        name=name,
+                        dependencies=[],
+                        action_type="tool",
+                        parameters={},
+                        status="pending",
+                    )
+                )
             if len(tasks) >= max_tasks:
                 break
 
@@ -31,8 +41,17 @@ class PlanningDecomposition:
         if not tasks:
             parts = [p.strip() for p in reasoning_text.split(".") if p.strip()]
             for p in parts[:max_tasks]:
-                tid = f"task_{len(tasks)+1}"
-                tasks.append(TaskDef(id=tid, name=p[:80], dependencies=[], action_type="tool", parameters={}, status="pending"))
+                tid = f"task_{len(tasks) + 1}"
+                tasks.append(
+                    TaskDef(
+                        id=tid,
+                        name=p[:80],
+                        dependencies=[],
+                        action_type="tool",
+                        parameters={},
+                        status="pending",
+                    )
+                )
 
         return tasks
 

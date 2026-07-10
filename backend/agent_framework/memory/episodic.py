@@ -1,4 +1,5 @@
 """Episodic memory: session history and past outcomes."""
+
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, List, Dict
@@ -7,6 +8,7 @@ from typing import Any, List, Dict
 @dataclass
 class Episode:
     """Single episode from memory."""
+
     query: str
     reasoning: str
     tasks: List[Dict[str, Any]]
@@ -35,4 +37,3 @@ class EpisodicMemory:
         TODO: Implement similarity search; currently returns most recent.
         """
         return list(self.episodes)[-limit:]
-

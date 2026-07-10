@@ -1,7 +1,8 @@
 """Layer 11: Cost tracking and budget enforcement."""
+
 from __future__ import annotations
 
-from typing import Dict, Tuple
+from typing import Dict
 
 
 class CostTracker:
@@ -11,7 +12,9 @@ class CostTracker:
     }
 
     @classmethod
-    def track(cls, action_type: str, tokens: int | Dict[str, int], model: str = "claude") -> float:
+    def track(
+        cls, action_type: str, tokens: int | Dict[str, int], model: str = "claude"
+    ) -> float:
         pricing = cls.PRICING.get(model, cls.PRICING.get("claude"))
         # tokens may be an int (total) or dict {"input": x, "output": y}
         if isinstance(tokens, dict):
@@ -21,7 +24,9 @@ class CostTracker:
             inp = tokens
             out = 0
 
-        cost = (inp / 1000.0) * pricing["input_per_1k"] + (out / 1000.0) * pricing["output_per_1k"]
+        cost = (inp / 1000.0) * pricing["input_per_1k"] + (out / 1000.0) * pricing[
+            "output_per_1k"
+        ]
         return float(cost)
 
 
@@ -49,7 +54,11 @@ class BudgetEnforcer:
         if ok:
             self._used[user_id] = total_cost
 
-        return {"total_cost": total_cost, "tokens_used": 0, "remaining_budget": remaining}
+        return {
+            "total_cost": total_cost,
+            "tokens_used": 0,
+            "remaining_budget": remaining,
+        }
 
 
 __all__ = ["CostTracker", "BudgetEnforcer"]

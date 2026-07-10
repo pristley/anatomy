@@ -13,7 +13,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable):
         path = request.url.path
-        public = path.startswith("/health") or path.startswith("/docs") or path.startswith("/openapi.json") or path.startswith("/metrics")
+        public = (
+            path.startswith("/health")
+            or path.startswith("/docs")
+            or path.startswith("/openapi.json")
+            or path.startswith("/metrics")
+        )
         if public:
             return await call_next(request)
 
@@ -29,7 +34,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
             user_id = self._validate_token(token)
 
         if not user_id:
-            return Response(status_code=401, content=json.dumps({"error": "unauthorized", "request_id": request.scope.get("request_id")}), media_type="application/json")
+            return Response(
+                status_code=401,
+                content=json.dumps(
+                    {
+                        "error": "unauthorized",
+                        "request_id": request.scope.get("request_id"),
+                    }
+                ),
+                media_type="application/json",
+            )
 
         request.scope["user_id"] = user_id
         return await call_next(request)
@@ -47,7 +61,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         try:
             import os
             import jwt
-            options = {"verify_signature": True}
+
             alg = os.getenv("JWT_ALGORITHM", "HS256")
             secret = os.getenv("JWT_SECRET")
             pub = os.getenv("JWT_PUBLIC_KEY")

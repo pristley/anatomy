@@ -1,4 +1,5 @@
 """Parameter schema validator and sanitizer."""
+
 from __future__ import annotations
 
 import re
@@ -18,7 +19,9 @@ class SchemaValidator:
         return True
 
     @staticmethod
-    def validate_params(params: Dict[str, Any], schema: Dict[str, Any] | None) -> Tuple[bool, List[str], Dict[str, Any]]:
+    def validate_params(
+        params: Dict[str, Any], schema: Dict[str, Any] | None
+    ) -> Tuple[bool, List[str], Dict[str, Any]]:
         errors: List[str] = []
         sanitized = dict(params or {})
 
@@ -35,7 +38,7 @@ class SchemaValidator:
                 expected = spec.get("type") if isinstance(spec, dict) else spec
                 if expected and not isinstance(val, expected):
                     # allow int where float expected
-                    if expected == float and isinstance(val, int):
+                    if expected is float and isinstance(val, int):
                         sanitized[key] = float(val)
                     else:
                         errors.append(f"{key} type mismatch expected {expected}")

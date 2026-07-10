@@ -16,9 +16,11 @@ Status:
 
 import asyncio
 
+
 async def main():
     # TODO: Implement example
     print("tool_integration: placeholder")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

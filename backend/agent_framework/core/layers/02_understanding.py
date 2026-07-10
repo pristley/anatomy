@@ -1,7 +1,8 @@
 """Layer 2: Perception and knowledge retrieval (mocked)."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 class PerceptionEngine:
@@ -45,7 +46,11 @@ class UnderstandingLayer:
         # confidence placeholder
         confidence = 0.5 if parsed.get("intent") != "unknown" else 0.2
 
-        return {"parsed_query": parsed, "kb_results": kb_results, "confidence": confidence}
+        return {
+            "parsed_query": parsed,
+            "kb_results": kb_results,
+            "confidence": confidence,
+        }
 
 
 __all__ = ["PerceptionEngine", "KnowledgeRetriever", "UnderstandingLayer"]

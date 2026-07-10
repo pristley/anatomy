@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Request, Query, Body
 from pydantic import BaseModel, Field, validator
-from typing import List, Optional, Dict, Any
+from typing import Optional, Dict, Any
 import uuid
 import re
 import time
@@ -14,8 +14,18 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-def _error_resp(message: str, request: Request, status_code: int = 400, details: Any = None):
-    return HTTPException(status_code=status_code, detail={"error": message, "request_id": request.scope.get("request_id"), "status_code": status_code, "details": details})
+def _error_resp(
+    message: str, request: Request, status_code: int = 400, details: Any = None
+):
+    return HTTPException(
+        status_code=status_code,
+        detail={
+            "error": message,
+            "request_id": request.scope.get("request_id"),
+            "status_code": status_code,
+            "details": details,
+        },
+    )
 
 
 class AgentCreate(BaseModel):
@@ -93,10 +103,14 @@ class AgentService:
             "config": cfg,
             "status": a.status,
             "created_at": int(a.created_at.timestamp()) if a.created_at else None,
-            "updated_at": int(a.updated_at.timestamp()) if hasattr(a, 'updated_at') and a.updated_at else None,
+            "updated_at": (
+                int(a.updated_at.timestamp())
+                if hasattr(a, "updated_at") and a.updated_at
+                else None
+            ),
             "owner_id": a.owner_id,
             "stats": stats,
-            "archived": bool(a.archived) if hasattr(a, 'archived') else False,
+            "archived": bool(a.archived) if hasattr(a, "archived") else False,
         }
 
     def create_agent(self, owner_id: str, payload: AgentCreate) -> Dict[str, Any]:
@@ -147,32 +161,66 @@ class AgentService:
         logger.info("agent.create", extra={"agent_id": aid, "owner_id": owner_id})
         return obj
 
-    def list_agents(self, owner_id: str, skip: int = 0, limit: int = 20, status: Optional[str] = None, search: Optional[str] = None):
+    def list_agents(
+        self,
+        owner_id: str,
+        skip: int = 0,
+        limit: int = 20,
+        status: Optional[str] = None,
+        search: Optional[str] = None,
+    ):
         if self.db:
             models = self._import_models()
-            q = self.db.query(models.Agent).filter(models.Agent.owner_id == owner_id, models.Agent.archived == False)
+            q = self.db.query(models.Agent).filter(
+                models.Agent.owner_id == owner_id, models.Agent.archived.is_(False)
+            )
             if status:
                 q = q.filter(models.Agent.status == status)
             if search:
                 like = f"%{search}%"
-                q = q.filter(models.Agent.name.ilike(like) | (models.Agent.description.ilike(like)))
+                q = q.filter(
+                    models.Agent.name.ilike(like)
+                    | (models.Agent.description.ilike(like))
+                )
             total = q.count()
             items = q.offset(skip).limit(limit).all()
-            return {"agents": [self._agent_to_dict(a) for a in items], "total": total, "skip": skip, "limit": limit}
+            return {
+                "agents": [self._agent_to_dict(a) for a in items],
+                "total": total,
+                "skip": skip,
+                "limit": limit,
+            }
 
-        items = [v for v in self._store.values() if v.get("owner_id") == owner_id and not v.get("archived")]
+        items = [
+            v
+            for v in self._store.values()
+            if v.get("owner_id") == owner_id and not v.get("archived")
+        ]
         if status:
             items = [i for i in items if i.get("status") == status]
         if search:
-            items = [i for i in items if search.lower() in i.get("name", "").lower() or (i.get("description") and search.lower() in i.get("description").lower())]
+            items = [
+                i
+                for i in items
+                if search.lower() in i.get("name", "").lower()
+                or (
+                    i.get("description")
+                    and search.lower() in i.get("description").lower()
+                )
+            ]
         total = len(items)
-        return {"agents": items[skip: skip + limit], "total": total, "skip": skip, "limit": limit}
+        return {
+            "agents": items[skip : skip + limit],
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+        }
 
     def get_agent(self, agent_id: str) -> Dict[str, Any]:
         if self.db:
             models = self._import_models()
             ag = self.db.query(models.Agent).get(agent_id)
-            if not ag or getattr(ag, 'archived', False):
+            if not ag or getattr(ag, "archived", False):
                 raise KeyError("not found")
             return self._agent_to_dict(ag)
 
@@ -181,17 +229,25 @@ class AgentService:
             raise KeyError("not found")
         return ag
 
-    def update_agent(self, agent_id: str, owner_id: str, payload: AgentUpdate) -> Dict[str, Any]:
+    def update_agent(
+        self, agent_id: str, owner_id: str, payload: AgentUpdate
+    ) -> Dict[str, Any]:
         if self.db:
             models = self._import_models()
             ag = self.db.query(models.Agent).get(agent_id)
-            if not ag or getattr(ag, 'archived', False):
+            if not ag or getattr(ag, "archived", False):
                 raise KeyError("not found")
             if ag.owner_id != owner_id:
                 raise PermissionError("forbidden")
             # uniqueness
             if payload.name:
-                exists = self.db.query(models.Agent).filter(models.Agent.name == payload.name, models.Agent.id != agent_id).first()
+                exists = (
+                    self.db.query(models.Agent)
+                    .filter(
+                        models.Agent.name == payload.name, models.Agent.id != agent_id
+                    )
+                    .first()
+                )
                 if exists:
                     raise ValueError("name exists")
                 ag.name = payload.name
@@ -207,7 +263,9 @@ class AgentService:
             self.db.add(ag)
             self.db.commit()
             self.db.refresh(ag)
-            logger.info("agent.update", extra={"agent_id": agent_id, "owner_id": owner_id})
+            logger.info(
+                "agent.update", extra={"agent_id": agent_id, "owner_id": owner_id}
+            )
             return self._agent_to_dict(ag)
 
         ag = self._store.get(agent_id)
@@ -215,7 +273,11 @@ class AgentService:
             raise KeyError("not found")
         if ag.get("owner_id") != owner_id:
             raise PermissionError("forbidden")
-        if payload.name and any(a for a in self._store.values() if a["name"] == payload.name and a["id"] != agent_id):
+        if payload.name and any(
+            a
+            for a in self._store.values()
+            if a["name"] == payload.name and a["id"] != agent_id
+        ):
             raise ValueError("name exists")
         if payload.name:
             ag["name"] = payload.name
@@ -231,7 +293,9 @@ class AgentService:
         logger.info("agent.update", extra={"agent_id": agent_id, "owner_id": owner_id})
         return ag
 
-    def delete_agent(self, agent_id: str, owner_id: str, permanent: bool = False) -> None:
+    def delete_agent(
+        self, agent_id: str, owner_id: str, permanent: bool = False
+    ) -> None:
         if self.db:
             models = self._import_models()
             ag = self.db.query(models.Agent).get(agent_id)
@@ -242,13 +306,18 @@ class AgentService:
             if permanent:
                 self.db.delete(ag)
                 self.db.commit()
-                logger.info("agent.delete.permanent", extra={"agent_id": agent_id, "owner_id": owner_id})
+                logger.info(
+                    "agent.delete.permanent",
+                    extra={"agent_id": agent_id, "owner_id": owner_id},
+                )
                 return
             ag.archived = True
             ag.updated_at = datetime.utcnow()
             self.db.add(ag)
             self.db.commit()
-            logger.info("agent.delete.soft", extra={"agent_id": agent_id, "owner_id": owner_id})
+            logger.info(
+                "agent.delete.soft", extra={"agent_id": agent_id, "owner_id": owner_id}
+            )
             return
 
         ag = self._store.get(agent_id)
@@ -258,12 +327,17 @@ class AgentService:
             raise PermissionError("forbidden")
         if permanent:
             del self._store[agent_id]
-            logger.info("agent.delete.permanent", extra={"agent_id": agent_id, "owner_id": owner_id})
+            logger.info(
+                "agent.delete.permanent",
+                extra={"agent_id": agent_id, "owner_id": owner_id},
+            )
             return
         # soft delete
         ag["archived"] = True
         ag["updated_at"] = self._now_ts()
-        logger.info("agent.delete.soft", extra={"agent_id": agent_id, "owner_id": owner_id})
+        logger.info(
+            "agent.delete.soft", extra={"agent_id": agent_id, "owner_id": owner_id}
+        )
 
     def patch_status(self, agent_id: str, owner_id: str, status: str) -> Dict[str, Any]:
         if self.db:
@@ -277,7 +351,10 @@ class AgentService:
             ag.updated_at = datetime.utcnow()
             self.db.add(ag)
             self.db.commit()
-            logger.info("agent.status", extra={"agent_id": agent_id, "owner_id": owner_id, "status": status})
+            logger.info(
+                "agent.status",
+                extra={"agent_id": agent_id, "owner_id": owner_id, "status": status},
+            )
             return self._agent_to_dict(ag)
 
         ag = self._store.get(agent_id)
@@ -287,7 +364,10 @@ class AgentService:
             raise PermissionError("forbidden")
         ag["status"] = status
         ag["updated_at"] = self._now_ts()
-        logger.info("agent.status", extra={"agent_id": agent_id, "owner_id": owner_id, "status": status})
+        logger.info(
+            "agent.status",
+            extra={"agent_id": agent_id, "owner_id": owner_id, "status": status},
+        )
         return ag
 
     def reset_agent(self, agent_id: str, owner_id: str) -> Dict[str, Any]:
@@ -302,7 +382,9 @@ class AgentService:
             ag.updated_at = datetime.utcnow()
             self.db.add(ag)
             self.db.commit()
-            logger.info("agent.reset", extra={"agent_id": agent_id, "owner_id": owner_id})
+            logger.info(
+                "agent.reset", extra={"agent_id": agent_id, "owner_id": owner_id}
+            )
             return self._agent_to_dict(ag)
 
         ag = self._store.get(agent_id)
@@ -339,7 +421,10 @@ class AgentService:
             self.db.add(clone)
             self.db.commit()
             self.db.refresh(clone)
-            logger.info("agent.clone", extra={"src": agent_id, "new": new_id, "owner_id": owner_id})
+            logger.info(
+                "agent.clone",
+                extra={"src": agent_id, "new": new_id, "owner_id": owner_id},
+            )
             return self._agent_to_dict(clone)
 
         src = self._store.get(agent_id)
@@ -356,7 +441,9 @@ class AgentService:
         clone["updated_at"] = now
         clone["stats"] = {}
         self._store[new_id] = clone
-        logger.info("agent.clone", extra={"src": agent_id, "new": new_id, "owner_id": owner_id})
+        logger.info(
+            "agent.clone", extra={"src": agent_id, "new": new_id, "owner_id": owner_id}
+        )
         return clone
 
     def get_config_cached(self, agent_id: str, ttl: int = 60):
@@ -404,6 +491,8 @@ def get_db_session():
 
 # Wrap the backend session generator so FastAPI can depend on it even when absent
 _real_get_db = get_db_session()
+
+
 def _db_dep():
     if _real_get_db:
         yield from _real_get_db()
@@ -416,7 +505,12 @@ _default_service = AgentService()
 
 
 @router.post("/", response_model=AgentOut, status_code=201)
-async def create_agent(request: Request, payload: AgentCreate, user_id: str = Depends(get_current_user), db: Optional[Session] = Depends(_db_dep)):
+async def create_agent(
+    request: Request,
+    payload: AgentCreate,
+    user_id: str = Depends(get_current_user),
+    db: Optional[Session] = Depends(_db_dep),
+):
     if not user_id:
         raise _error_resp("unauthorized", request, 401)
     try:
@@ -430,7 +524,15 @@ async def create_agent(request: Request, payload: AgentCreate, user_id: str = De
 
 
 @router.get("/", response_model=Dict)
-async def list_agents(request: Request, skip: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100), status: Optional[str] = None, search: Optional[str] = None, user_id: str = Depends(get_current_user), db: Optional[Session] = Depends(_db_dep)):
+async def list_agents(
+    request: Request,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    user_id: str = Depends(get_current_user),
+    db: Optional[Session] = Depends(_db_dep),
+):
     if not user_id:
         raise _error_resp("unauthorized", request, 401)
     svc = AgentService(db=db) if db else _default_service
@@ -439,7 +541,12 @@ async def list_agents(request: Request, skip: int = Query(0, ge=0), limit: int =
 
 
 @router.get("/{agent_id}", response_model=AgentOut)
-async def get_agent(request: Request, agent_id: str, user_id: str = Depends(get_current_user), db: Optional[Session] = Depends(_db_dep)):
+async def get_agent(
+    request: Request,
+    agent_id: str,
+    user_id: str = Depends(get_current_user),
+    db: Optional[Session] = Depends(_db_dep),
+):
     if not user_id:
         raise _error_resp("unauthorized", request, 401)
     svc = AgentService(db=db) if db else _default_service
@@ -455,7 +562,13 @@ async def get_agent(request: Request, agent_id: str, user_id: str = Depends(get_
 
 
 @router.put("/{agent_id}", response_model=AgentOut)
-async def update_agent(request: Request, agent_id: str, payload: AgentUpdate, user_id: str = Depends(get_current_user), db: Optional[Session] = Depends(_db_dep)):
+async def update_agent(
+    request: Request,
+    agent_id: str,
+    payload: AgentUpdate,
+    user_id: str = Depends(get_current_user),
+    db: Optional[Session] = Depends(_db_dep),
+):
     if not user_id:
         raise _error_resp("unauthorized", request, 401)
     svc = AgentService(db=db) if db else _default_service
@@ -473,7 +586,13 @@ async def update_agent(request: Request, agent_id: str, payload: AgentUpdate, us
 
 
 @router.delete("/{agent_id}", status_code=204)
-async def delete_agent(request: Request, agent_id: str, permanent: bool = Query(False), user_id: str = Depends(get_current_user), db: Optional[Session] = Depends(_db_dep)):
+async def delete_agent(
+    request: Request,
+    agent_id: str,
+    permanent: bool = Query(False),
+    user_id: str = Depends(get_current_user),
+    db: Optional[Session] = Depends(_db_dep),
+):
     if not user_id:
         raise _error_resp("unauthorized", request, 401)
     svc = AgentService(db=db) if db else _default_service
@@ -489,7 +608,13 @@ async def delete_agent(request: Request, agent_id: str, permanent: bool = Query(
 
 
 @router.patch("/{agent_id}/status", response_model=AgentOut)
-async def patch_status(request: Request, agent_id: str, status_payload: Dict[str, str] = Body(...), user_id: str = Depends(get_current_user), db: Optional[Session] = Depends(_db_dep)):
+async def patch_status(
+    request: Request,
+    agent_id: str,
+    status_payload: Dict[str, str] = Body(...),
+    user_id: str = Depends(get_current_user),
+    db: Optional[Session] = Depends(_db_dep),
+):
     if not user_id:
         raise _error_resp("unauthorized", request, 401)
     status = status_payload.get("status")
@@ -506,7 +631,12 @@ async def patch_status(request: Request, agent_id: str, status_payload: Dict[str
 
 
 @router.post("/{agent_id}/reset", response_model=AgentOut)
-async def reset_agent(request: Request, agent_id: str, user_id: str = Depends(get_current_user), db: Optional[Session] = Depends(_db_dep)):
+async def reset_agent(
+    request: Request,
+    agent_id: str,
+    user_id: str = Depends(get_current_user),
+    db: Optional[Session] = Depends(_db_dep),
+):
     if not user_id:
         raise _error_resp("unauthorized", request, 401)
     svc = AgentService(db=db) if db else _default_service
@@ -520,7 +650,12 @@ async def reset_agent(request: Request, agent_id: str, user_id: str = Depends(ge
 
 
 @router.post("/{agent_id}/clone", response_model=AgentOut)
-async def clone_agent(request: Request, agent_id: str, user_id: str = Depends(get_current_user), db: Optional[Session] = Depends(_db_dep)):
+async def clone_agent(
+    request: Request,
+    agent_id: str,
+    user_id: str = Depends(get_current_user),
+    db: Optional[Session] = Depends(_db_dep),
+):
     if not user_id:
         raise _error_resp("unauthorized", request, 401)
     svc = AgentService(db=db) if db else _default_service

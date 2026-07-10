@@ -1,4 +1,5 @@
 """Run all guardrails in sequence and aggregate results."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
@@ -15,7 +16,9 @@ class GuardrailOrchestrator:
         self.budget = BudgetEnforcer()
         self.rate = RateLimiter()
 
-    def check_all(self, state: Dict[str, Any], action: Dict[str, Any], cost: float = 0.0) -> Tuple[bool, List[Dict[str, Any]]]:
+    def check_all(
+        self, state: Dict[str, Any], action: Dict[str, Any], cost: float = 0.0
+    ) -> Tuple[bool, List[Dict[str, Any]]]:
         failed: List[Dict[str, Any]] = []
 
         action_type = (action.get("tool") or action.get("action_type") or "").lower()
@@ -31,13 +34,19 @@ class GuardrailOrchestrator:
         for k, v in params.items():
             if isinstance(v, str):
                 safe, violations = filter_content(v)
-                logger.info(f"guardrail: content check field={k} safe={safe} violations={violations}")
+                logger.info(
+                    f"guardrail: content check field={k} safe={safe} violations={violations}"
+                )
                 if not safe:
-                    failed.append({"guardrail": "content", "field": k, "violations": violations})
+                    failed.append(
+                        {"guardrail": "content", "field": k, "violations": violations}
+                    )
 
         # budget
         if not self.budget.check_budget(state.get("agent_id"), cost):
-            logger.info(f"guardrail: budget exceeded for {state.get('agent_id')} cost={cost}")
+            logger.info(
+                f"guardrail: budget exceeded for {state.get('agent_id')} cost={cost}"
+            )
             failed.append({"guardrail": "budget", "reason": "insufficient funds"})
 
         # rate limiter

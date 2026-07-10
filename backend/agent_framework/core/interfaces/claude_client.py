@@ -1,4 +1,5 @@
 """Claude LLM client implementation (minimal)."""
+
 from __future__ import annotations
 
 import os
@@ -11,11 +12,15 @@ from .llm_interface import LLMClient
 
 
 class ClaudeClient(LLMClient):
-    def __init__(self, api_key: str | None = None, model: str = "claude-3-5-sonnet-20241022") -> None:
+    def __init__(
+        self, api_key: str | None = None, model: str = "claude-3-5-sonnet-20241022"
+    ) -> None:
         self.api_key = api_key or os.getenv("CLAUDE_API_KEY")
         self.model = model
 
-    async def infer(self, system_prompt: str, user_msg: str, max_tokens: int = 512) -> Tuple[str, Dict]:
+    async def infer(
+        self, system_prompt: str, user_msg: str, max_tokens: int = 512
+    ) -> Tuple[str, Dict]:
         metrics: Dict = {"tokens_used": 0, "cost": 0.0, "latency_ms": 0}
         start = time.monotonic()
 
@@ -50,7 +55,11 @@ class ClaudeClient(LLMClient):
                 return text, metrics
         except Exception as exc:  # pragma: no cover - network/error handling
             latency = int((time.monotonic() - start) * 1000)
-            return f"[error calling Claude API] {exc}", {"tokens_used": 0, "cost": 0.0, "latency_ms": latency}
+            return f"[error calling Claude API] {exc}", {
+                "tokens_used": 0,
+                "cost": 0.0,
+                "latency_ms": latency,
+            }
 
 
 __all__ = ["ClaudeClient"]

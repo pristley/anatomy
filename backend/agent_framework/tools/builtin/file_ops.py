@@ -1,8 +1,8 @@
 """Basic file operations tool (dev only)."""
+
 from __future__ import annotations
 
 import os
-from typing import Any
 
 
 def read_file(path: str) -> str:

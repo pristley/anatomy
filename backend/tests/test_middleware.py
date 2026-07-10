@@ -1,4 +1,3 @@
-import os
 import jwt
 import pytest
 from fastapi.testclient import TestClient

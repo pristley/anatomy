@@ -1,4 +1,5 @@
 """Abstract guardrails and simple enforcers."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

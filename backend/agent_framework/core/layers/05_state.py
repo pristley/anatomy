@@ -1,4 +1,5 @@
 """Layer 5: State management (immutable snapshots)."""
+
 from __future__ import annotations
 
 from copy import deepcopy
@@ -14,11 +15,20 @@ class StateManager:
         self.state_history: List[AgentState] = []
 
     def initialize_state(self, goal: str | None, tasks: List[TaskDef]) -> AgentState:
-        st = AgentState(agent_id=self.agent_id, goal=goal or "", active_tasks=deepcopy(tasks), completed_tasks=[], status="running", memory_refs=[])
+        st = AgentState(
+            agent_id=self.agent_id,
+            goal=goal or "",
+            active_tasks=deepcopy(tasks),
+            completed_tasks=[],
+            status="running",
+            memory_refs=[],
+        )
         self.state_history.append(st)
         return st
 
-    def mark_task_complete(self, state: AgentState, task_id: str, result: Optional[dict] = None) -> AgentState:
+    def mark_task_complete(
+        self, state: AgentState, task_id: str, result: Optional[dict] = None
+    ) -> AgentState:
         # produce a new AgentState (immutable snapshot)
         new_state = deepcopy(state)
         # move task from active to completed

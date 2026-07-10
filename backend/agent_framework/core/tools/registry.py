@@ -1,4 +1,5 @@
 """Tool registry and built-in tools."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -49,9 +50,30 @@ def _register_builtins(reg: ToolRegistry) -> None:
     def return_string(params: Dict[str, Any]) -> str:
         return params.get("value", "")
 
-    reg.register(Tool(name="print_text", description="Print text to stdout", params_schema={"text": "str"}, handler=print_text))
-    reg.register(Tool(name="add_numbers", description="Add a list of numbers", params_schema={"numbers": "List[float]"}, handler=add_numbers))
-    reg.register(Tool(name="return_string", description="Return the given string", params_schema={"value": "str"}, handler=return_string))
+    reg.register(
+        Tool(
+            name="print_text",
+            description="Print text to stdout",
+            params_schema={"text": "str"},
+            handler=print_text,
+        )
+    )
+    reg.register(
+        Tool(
+            name="add_numbers",
+            description="Add a list of numbers",
+            params_schema={"numbers": "List[float]"},
+            handler=add_numbers,
+        )
+    )
+    reg.register(
+        Tool(
+            name="return_string",
+            description="Return the given string",
+            params_schema={"value": "str"},
+            handler=return_string,
+        )
+    )
 
 
 __all__ = ["Tool", "ToolRegistry"]

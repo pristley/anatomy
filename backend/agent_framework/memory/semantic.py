@@ -1,4 +1,5 @@
 """Semantic memory: vector embeddings and patterns."""
+
 from dataclasses import dataclass
 from typing import List
 
@@ -6,6 +7,7 @@ from typing import List
 @dataclass
 class SemanticRecord:
     """Single semantic memory record."""
+
     text: str
     embedding: List[float]
     topic: str
@@ -31,4 +33,3 @@ class SemanticMemory:
         TODO: Implement vector similarity search; for now return most recent.
         """
         return list(self.records)[-limit:]
-

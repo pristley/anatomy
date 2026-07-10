@@ -20,7 +20,9 @@ class AbstractMemory(ABC):
 
 class AbstractEpisodic(AbstractMemory):
     @abstractmethod
-    def store_experience(self, input: str, action: str, output: str, score: float | None = None) -> None:
+    def store_experience(
+        self, input: str, action: str, output: str, score: float | None = None
+    ) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -34,7 +36,9 @@ class AbstractSemantic(AbstractMemory):
         raise NotImplementedError()
 
     @abstractmethod
-    def retrieve_patterns(self, category: str, min_confidence: float = 0.7) -> List[Dict[str, Any]]:
+    def retrieve_patterns(
+        self, category: str, min_confidence: float = 0.7
+    ) -> List[Dict[str, Any]]:
         raise NotImplementedError()
 
 
@@ -44,4 +48,9 @@ class AbstractRetriever(ABC):
         raise NotImplementedError()
 
 
-__all__ = ["AbstractMemory", "AbstractEpisodic", "AbstractSemantic", "AbstractRetriever"]
+__all__ = [
+    "AbstractMemory",
+    "AbstractEpisodic",
+    "AbstractSemantic",
+    "AbstractRetriever",
+]

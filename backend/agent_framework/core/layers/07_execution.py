@@ -1,20 +1,19 @@
-from __future__ import annotations
-
 """Layer 7: Execution Engine - Tool invocation with safety bounds.
 
 Provides ExecutionEngine that runs tools with timeouts and retry/backoff.
 """
 
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import Any, Dict, AsyncGenerator, Optional, Protocol
+from typing import Any, Dict, Optional, Protocol
 from enum import Enum
 from agent_framework.core.types import ExecutionMetrics
 
 
 class ToolProtocol(Protocol):
-    def validate_params(self, params: Dict[str, Any]) -> Optional[str]:
-        ...
+    def validate_params(self, params: Dict[str, Any]) -> Optional[str]: ...
 
     def run(self, **params: Any) -> Any:  # sync
         ...
@@ -22,12 +21,12 @@ class ToolProtocol(Protocol):
     async def run_async(self, **params: Any) -> Any:  # async alternative name
         ...
 
-    def estimated_cost(self, **params: Any) -> float:
-        ...
+    def estimated_cost(self, **params: Any) -> float: ...
 
 
 class ExecutionStatus(str, Enum):
     """Execution outcome status."""
+
     SUCCESS = "success"
     TIMEOUT = "timeout"
     ERROR = "error"
@@ -44,7 +43,13 @@ class ExecutionResult:
         metrics: ExecutionMetrics with timing/cost
     """
 
-    def __init__(self, status: ExecutionStatus, output: Optional[Any] = None, error: Optional[str] = None, metrics: Optional[ExecutionMetrics] = None) -> None:
+    def __init__(
+        self,
+        status: ExecutionStatus,
+        output: Optional[Any] = None,
+        error: Optional[str] = None,
+        metrics: Optional[ExecutionMetrics] = None,
+    ) -> None:
         self.status = status
         self.output = output
         self.error = error
@@ -120,7 +125,9 @@ class ExecutionEngine:
 
             # Prefer explicit async run method if available
             run_coro = None
-            if hasattr(tool, "run_async") and asyncio.iscoroutinefunction(getattr(tool, "run_async")):
+            if hasattr(tool, "run_async") and asyncio.iscoroutinefunction(
+                getattr(tool, "run_async")
+            ):
                 run_coro = tool.run_async(**params)
             elif asyncio.iscoroutinefunction(getattr(tool, "run", None)):
                 run_coro = tool.run(**params)
@@ -205,19 +212,23 @@ class ExecutionEngine:
                 return result
 
             # Timeout = retry with backoff
-            if result.status == ExecutionStatus.TIMEOUT and attempt < self.max_retries - 1:
-                wait_time = self.backoff_factor ** attempt
+            if (
+                result.status == ExecutionStatus.TIMEOUT
+                and attempt < self.max_retries - 1
+            ):
+                wait_time = self.backoff_factor**attempt
                 await asyncio.sleep(wait_time)
                 continue
 
             # Terminal error or out of retries = return failure
             return result
 
-        return result or ExecutionResult(status=ExecutionStatus.ERROR, error="No result produced")
+        return result or ExecutionResult(
+            status=ExecutionStatus.ERROR, error="No result produced"
+        )
 
 
 __all__ = ["ExecutionEngine", "ExecutionResult", "ExecutionStatus"]
-
 
 
 __all__ = ["ExecutionEngine"]

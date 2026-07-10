@@ -3,8 +3,9 @@
 This module defines the `AgentConfig` dataclass which centralizes configuration
 for Agent instances. All fields are documented on the dataclass.
 """
+
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 
 @dataclass
@@ -26,6 +27,7 @@ class AgentConfig:
         max_subagents: Maximum concurrent subagents
         extra: Custom options dict
     """
+
     model_name: str = "claude-3-5-sonnet-20241022"
     max_iterations: int = 10
     max_tokens: int = 4096

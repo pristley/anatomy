@@ -8,8 +8,10 @@ Status:
     TODO: Implement performance benchmarking
 """
 
+
 def main():
     print("benchmark: placeholder")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

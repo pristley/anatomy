@@ -22,7 +22,7 @@ def create_app() -> FastAPI:
 
     # Build basic config
     ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
-    PORT = int(os.getenv("PORT", "8000"))
+    _PORT = int(os.getenv("PORT", "8000"))
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     DATABASE_URL = os.getenv("DATABASE_URL")
     CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
@@ -126,6 +126,7 @@ def create_app() -> FastAPI:
         from .routes import chat as chat_mod
         from .routes import tools as tools_mod
         from .routes import memory as memory_mod
+
         # monitoring is optional
         try:
             from .routes import monitoring as monitoring_mod
@@ -134,11 +135,17 @@ def create_app() -> FastAPI:
 
         app.include_router(health_mod.router, prefix="", tags=["health"])
         app.include_router(agents_mod.router, prefix="/agents", tags=["agents"])
-        app.include_router(chat_mod.router, prefix="/agents/{agent_id}/messages", tags=["chat"])
+        app.include_router(
+            chat_mod.router, prefix="/agents/{agent_id}/messages", tags=["chat"]
+        )
         app.include_router(tools_mod.router, prefix="/tools", tags=["tools"])
-        app.include_router(memory_mod.router, prefix="/agents/{agent_id}/memory", tags=["memory"])
+        app.include_router(
+            memory_mod.router, prefix="/agents/{agent_id}/memory", tags=["memory"]
+        )
         if monitoring_mod is not None:
-            app.include_router(monitoring_mod.router, prefix="/monitoring", tags=["monitoring"])
+            app.include_router(
+                monitoring_mod.router, prefix="/monitoring", tags=["monitoring"]
+            )
     except Exception:
         # Routers may not be present during initial scaffolding — ignore for now
         pass
@@ -146,15 +153,20 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def generic_exception_handler(request, exc):
         request_id = getattr(request.state, "request_id", "")
-        return JSONResponse(status_code=500, content={"error": "internal error", "request_id": request_id})
+        return JSONResponse(
+            status_code=500,
+            content={"error": "internal error", "request_id": request_id},
+        )
 
     # HTTP exceptions (e.g. 404) should also include request_id
-    from fastapi import HTTPException
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request, exc: HTTPException):
         request_id = getattr(request.state, "request_id", "")
-        content = {"error": exc.detail if exc.detail else exc.status_code, "request_id": request_id}
+        content = {
+            "error": exc.detail if exc.detail else exc.status_code,
+            "request_id": request_id,
+        }
         return JSONResponse(status_code=exc.status_code, content=content)
 
     return app

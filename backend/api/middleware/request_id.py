@@ -2,7 +2,9 @@ from typing import Callable
 import uuid
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from backend.agent_framework.observability.context import request_id_var, correlation_id_var
+from backend.agent_framework.observability.context import (
+    request_id_var,
+)
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):

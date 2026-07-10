@@ -16,9 +16,11 @@ Status:
 
 import asyncio
 
+
 async def main():
     # TODO: Implement example
     print("simple_query_agent: placeholder")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

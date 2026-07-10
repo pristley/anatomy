@@ -8,8 +8,10 @@ Status:
     TODO: Implement database initialization
 """
 
+
 def main():
     print("setup_db: placeholder")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

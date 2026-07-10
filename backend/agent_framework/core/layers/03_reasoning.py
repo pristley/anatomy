@@ -1,4 +1,5 @@
 """Layer 3: Reasoning core that uses an LLM client."""
+
 from __future__ import annotations
 
 import os
@@ -12,9 +13,14 @@ class ReasoningCore:
     def __init__(self, llm_client: LLMClient) -> None:
         self.llm = llm_client
 
-    async def reason(self, understanding: Dict[str, Any], memory: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    async def reason(
+        self, understanding: Dict[str, Any], memory: Dict[str, Any] | None = None
+    ) -> Dict[str, Any]:
         """Run reasoning by calling the LLM client and returning output + metrics."""
-        system_prompt = os.getenv("REASONER_SYSTEM_PROMPT", "You are agent reasoning engine. Answer concisely.")
+        system_prompt = os.getenv(
+            "REASONER_SYSTEM_PROMPT",
+            "You are agent reasoning engine. Answer concisely.",
+        )
         user_msg = f"Parsed: {understanding.get('parsed_query')}\nKB: {understanding.get('kb_results')}\nConfidence: {understanding.get('confidence')}"
         max_tokens = int(os.getenv("MAX_TOKENS_PER_REQUEST", "512"))
 

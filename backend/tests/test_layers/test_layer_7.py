@@ -1,4 +1,5 @@
 """Tests for Layer 7: Execution Engine."""
+
 import pytest
 import asyncio
 import importlib.util
@@ -45,7 +46,9 @@ class TestExecutionSuccess:
     """Tests for successful execution."""
 
     @pytest.mark.asyncio
-    async def test_execute_async_tool_success(self, execution_engine, mock_tool, exec_mod):
+    async def test_execute_async_tool_success(
+        self, execution_engine, mock_tool, exec_mod
+    ):
         """Test successful async tool execution."""
         mock_tool.run = AsyncMock(return_value={"data": "success"})
 
@@ -62,7 +65,9 @@ class TestExecutionSuccess:
         mock_tool.run.assert_called_once_with(param="value")
 
     @pytest.mark.asyncio
-    async def test_execute_sync_tool_success(self, execution_engine, mock_tool, exec_mod):
+    async def test_execute_sync_tool_success(
+        self, execution_engine, mock_tool, exec_mod
+    ):
         """Test successful sync tool execution."""
 
         def sync_run(**kwargs):
@@ -127,7 +132,9 @@ class TestExecutionRetry:
     """Tests for retry logic."""
 
     @pytest.mark.asyncio
-    async def test_retry_succeeds_on_second_attempt(self, execution_engine, mock_tool, exec_mod):
+    async def test_retry_succeeds_on_second_attempt(
+        self, execution_engine, mock_tool, exec_mod
+    ):
         """Test retry succeeds after transient failure."""
         call_count = {"n": 0}
 
@@ -148,25 +155,37 @@ class TestExecutionRetry:
         assert result.output == {"data": "success"}
 
     @pytest.mark.asyncio
-    async def test_retry_exhausts_and_returns_error(self, execution_engine, mock_tool, exec_mod):
+    async def test_retry_exhausts_and_returns_error(
+        self, execution_engine, mock_tool, exec_mod
+    ):
         """Test retry exhaustion returns final error."""
+
         async def always_fail(**kwargs):
             raise asyncio.TimeoutError("Always fail")
 
         mock_tool.run = always_fail
         result = await execution_engine.execute_with_retries(mock_tool, {})
-        assert result.status in (exec_mod.ExecutionStatus.TIMEOUT, exec_mod.ExecutionStatus.ERROR)
-
+        assert result.status in (
+            exec_mod.ExecutionStatus.TIMEOUT,
+            exec_mod.ExecutionStatus.ERROR,
+        )
 
     @pytest.mark.asyncio
     async def test_no_retries_returns_no_result(self, mock_tool):
         """If max_retries is 0, execute_with_retries should return a 'no result' error."""
         # engine with zero retries
-        import importlib.util, sys
+        import importlib.util
+        import sys
+
         backend_root = Path(__file__).resolve().parents[2]
         if str(backend_root) not in sys.path:
             sys.path.insert(0, str(backend_root))
-        mod = importlib.util.spec_from_file_location("layer07", str(backend_root / "agent_framework" / "core" / "layers" / "07_execution.py"))
+        mod = importlib.util.spec_from_file_location(
+            "layer07",
+            str(
+                backend_root / "agent_framework" / "core" / "layers" / "07_execution.py"
+            ),
+        )
         module = importlib.util.module_from_spec(mod)
         mod.loader.exec_module(module)
         engine = module.ExecutionEngine(timeout_ms=1000, max_retries=0)
@@ -195,8 +214,11 @@ class TestExecutionExtras:
         tool.run_async.assert_awaited()
 
     @pytest.mark.asyncio
-    async def test_estimated_cost_exception_results_zero_cost(self, execution_engine, mock_tool, exec_mod):
+    async def test_estimated_cost_exception_results_zero_cost(
+        self, execution_engine, mock_tool, exec_mod
+    ):
         """If estimated_cost raises, cost in metrics should be 0.0."""
+
         async def simple(**kwargs):
             return {"k": "v"}
 
@@ -208,6 +230,7 @@ class TestExecutionExtras:
     @pytest.mark.asyncio
     async def test_cancelled_error_path(self, execution_engine, mock_tool, exec_mod):
         """Tool raising CancelledError should produce CANCELLED status."""
+
         async def canceller(**kwargs):
             raise asyncio.CancelledError()
 

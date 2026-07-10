@@ -1,11 +1,14 @@
 """Content filter for PII, profanity and spam detection."""
+
 from __future__ import annotations
 
 import re
 from typing import Dict, Any, List, Tuple
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
-PHONE_RE = re.compile(r"\b(?:\+\d{1,3}[- ]?)?(?:\(\d{2,4}\)|\d{2,4})[- ]?\d{3,4}[- ]?\d{3,4}\b")
+PHONE_RE = re.compile(
+    r"\b(?:\+\d{1,3}[- ]?)?(?:\(\d{2,4}\)|\d{2,4})[- ]?\d{3,4}[- ]?\d{3,4}\b"
+)
 SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
 CC_RE = re.compile(r"\b(?:\d[ -]*?){13,16}\b")
 
@@ -38,20 +41,28 @@ def filter_content(text: str) -> Tuple[bool, List[Dict[str, Any]]]:
     violations: List[Dict[str, Any]] = []
     if EMAIL_RE.search(text):
         for m in EMAIL_RE.findall(text):
-            violations.append({"type": "pii_email", "text": m, "replacement": "[REDACTED_EMAIL]"})
+            violations.append(
+                {"type": "pii_email", "text": m, "replacement": "[REDACTED_EMAIL]"}
+            )
 
     if PHONE_RE.search(text):
         for m in PHONE_RE.findall(text):
             # PHONE_RE may capture groups; ensure string
-            violations.append({"type": "pii_phone", "text": m, "replacement": "[REDACTED_PHONE]"})
+            violations.append(
+                {"type": "pii_phone", "text": m, "replacement": "[REDACTED_PHONE]"}
+            )
 
     if SSN_RE.search(text):
         for m in SSN_RE.findall(text):
-            violations.append({"type": "pii_ssn", "text": m, "replacement": "[REDACTED_SSN]"})
+            violations.append(
+                {"type": "pii_ssn", "text": m, "replacement": "[REDACTED_SSN]"}
+            )
 
     if CC_RE.search(text):
         for m in CC_RE.findall(text):
-            violations.append({"type": "pii_credit_card", "text": m, "replacement": "[REDACTED_CC]"})
+            violations.append(
+                {"type": "pii_credit_card", "text": m, "replacement": "[REDACTED_CC]"}
+            )
 
     violations.extend(_find_profanity(text))
     violations.extend(_find_spam(text))

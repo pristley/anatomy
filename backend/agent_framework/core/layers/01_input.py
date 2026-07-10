@@ -1,4 +1,5 @@
 """Layer 1: Input normalization and validation."""
+
 from __future__ import annotations
 
 import uuid
@@ -10,7 +11,9 @@ from ..types import AgentInput
 
 class InputLayer:
     @staticmethod
-    def process(query: str, user_id: str, session_id: Optional[str] = None) -> AgentInput:
+    def process(
+        query: str, user_id: str, session_id: Optional[str] = None
+    ) -> AgentInput:
         """Validate and normalize raw input into an `AgentInput`.
 
         - Ensures `query` is non-empty.
@@ -26,7 +29,12 @@ class InputLayer:
 
         context = {"session_id": session_id}
 
-        return AgentInput(query=q, user_id=user_id, context=context, timestamp=datetime.now(timezone.utc))
+        return AgentInput(
+            query=q,
+            user_id=user_id,
+            context=context,
+            timestamp=datetime.now(timezone.utc),
+        )
 
 
 __all__ = ["InputLayer"]

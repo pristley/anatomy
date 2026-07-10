@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import asyncio
 import os
 import time
@@ -50,7 +50,10 @@ async def _check_memory() -> str:
             from agent_framework.memory.retrieval import SemanticRetrieval, MemoryEntry
         except Exception:
             try:
-                from agent_framework.agent_framework.memory.retrieval import SemanticRetrieval, MemoryEntry
+                from agent_framework.agent_framework.memory.retrieval import (
+                    SemanticRetrieval,
+                    MemoryEntry,
+                )
             except Exception:
                 SemanticRetrieval = None
 
@@ -62,7 +65,9 @@ async def _check_memory() -> str:
 
         # store and retrieve with timeout
         await asyncio.wait_for(retr.store_memory(entry), timeout=1.0)
-        res = await asyncio.wait_for(retr.retrieve_similar("health-check", top_k=1), timeout=1.0)
+        res = await asyncio.wait_for(
+            retr.retrieve_similar("health-check", top_k=1), timeout=1.0
+        )
         return "ok" if res else "error"
     except Exception:
         return "error"
@@ -77,7 +82,9 @@ async def _check_llm() -> str:
         import httpx
 
         async with httpx.AsyncClient(timeout=2.0) as client:
-            r = await client.get("https://api.anthropic.com/health", headers={"x-api-key": key})
+            r = await client.get(
+                "https://api.anthropic.com/health", headers={"x-api-key": key}
+            )
             return "ok" if r.status_code == 200 else "error"
     except Exception:
         return "error"
@@ -118,9 +125,15 @@ async def health():
 
     # run checks with per-check timeouts
     tasks = {
-        "database": asyncio.create_task(asyncio.wait_for(_check_database(), timeout=2.0)),
-        "memory_backend": asyncio.create_task(asyncio.wait_for(_check_memory(), timeout=1.0)),
-        "llm_connection": asyncio.create_task(asyncio.wait_for(_check_llm(), timeout=2.0)),
+        "database": asyncio.create_task(
+            asyncio.wait_for(_check_database(), timeout=2.0)
+        ),
+        "memory_backend": asyncio.create_task(
+            asyncio.wait_for(_check_memory(), timeout=1.0)
+        ),
+        "llm_connection": asyncio.create_task(
+            asyncio.wait_for(_check_llm(), timeout=2.0)
+        ),
     }
 
     checks = {}
@@ -140,10 +153,12 @@ async def health():
     try:
         try:
             from agent_framework.version import __version__ as v
+
             version = v
         except Exception:
             try:
                 from agent_framework.agent_framework.version import __version__ as v2
+
                 version = v2
             except Exception:
                 version = "unknown"
@@ -167,24 +182,27 @@ async def health():
 async def readiness():
     """Kubernetes readiness probe — 200 if healthy, 503 otherwise."""
     res = await health()
-    # res is a Response; get status field
-    body = res.body if hasattr(res, "body") else None
-    # If we returned a JSONResponse, use its content
-    try:
-        content = res.body.decode() if isinstance(res.body, (bytes, bytearray)) else res.body
-    except Exception:
-        content = None
-
-    # Fallback: call health() logic directly
+    # If we returned a JSONResponse, inspect the body for health status
     if isinstance(res, JSONResponse):
         data = res.body
         try:
             import json as _json
-            data_dict = _json.loads(data.decode()) if isinstance(data, (bytes, bytearray)) else data
+
+            data_dict = (
+                _json.loads(data.decode())
+                if isinstance(data, (bytes, bytearray))
+                else data
+            )
         except Exception:
             data_dict = None
         if data_dict and data_dict.get("status") == "healthy":
             return res
-        return JSONResponse(status_code=503, content={"status": "unhealthy"}, headers=_security_headers())
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unhealthy"},
+            headers=_security_headers(),
+        )
 
-    return JSONResponse(status_code=503, content={"status": "unhealthy"}, headers=_security_headers())
+    return JSONResponse(
+        status_code=503, content={"status": "unhealthy"}, headers=_security_headers()
+    )

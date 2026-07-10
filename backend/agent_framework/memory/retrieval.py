@@ -48,7 +48,12 @@ class SimpleEmbeddings:
 class OpenAIEmbeddings:
     """Async OpenAI embeddings client using `httpx`. Requires `OPENAI_API_KEY` env var or api_key param."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "text-embedding-3-small", base_url: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "text-embedding-3-small",
+        base_url: Optional[str] = None,
+    ):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.model = model
         self.base_url = base_url or "https://api.openai.com/v1"
@@ -58,7 +63,10 @@ class OpenAIEmbeddings:
             raise RuntimeError("OPENAI_API_KEY not configured")
         url = f"{self.base_url}/embeddings"
         payload = {"model": self.model, "input": text}
-        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(url, json=payload, headers=headers)
             resp.raise_for_status()
@@ -81,11 +89,13 @@ def _retry_backoff(max_retries: int = 3, base_delay: float = 0.05):
             while True:
                 try:
                     return await fn(*args, **kwargs)
-                except Exception as exc:
+                except Exception:
                     attempt += 1
                     if attempt > max_retries:
                         raise
-                    await asyncio.sleep(base_delay * (2 ** (attempt - 1)) + random.random() * 0.01)
+                    await asyncio.sleep(
+                        base_delay * (2 ** (attempt - 1)) + random.random() * 0.01
+                    )
 
         return wrapper
 
@@ -101,7 +111,9 @@ class Retriever:
     def __init__(self, embedding_model: SimpleEmbeddings):
         self.embedding_model = embedding_model
 
-    def retrieve(self, query: str, docs: List[Dict[str, Any]], top_k: int = 5) -> List[Dict[str, Any]]:
+    def retrieve(
+        self, query: str, docs: List[Dict[str, Any]], top_k: int = 5
+    ) -> List[Dict[str, Any]]:
         q_emb = self.embedding_model.embed(query)
         scored = []
         for d in docs:
@@ -150,7 +162,9 @@ class SemanticRetrieval:
 
     async def _embed(self, text: str) -> List[float]:
         # Support both sync and async embedding models
-        if hasattr(self.embedding_model, "aembed") and _is_coroutine_fn(getattr(self.embedding_model, "aembed")):
+        if hasattr(self.embedding_model, "aembed") and _is_coroutine_fn(
+            getattr(self.embedding_model, "aembed")
+        ):
             return await self.embedding_model.aembed(text)
         if _is_coroutine_fn(getattr(self.embedding_model, "embed", None)):
             return await self.embedding_model.embed(text)
@@ -158,10 +172,14 @@ class SemanticRetrieval:
         return self.embedding_model.embed(text)
 
     @_retry_backoff()
-    async def store_memory(self, memory_entry: Dict[str, Any], embedding: Optional[List[float]] = None) -> Dict[str, Any]:
+    async def store_memory(
+        self, memory_entry: Dict[str, Any], embedding: Optional[List[float]] = None
+    ) -> Dict[str, Any]:
         if not embedding:
             try:
-                embedding = await self._embed(memory_entry.get("content") or memory_entry.get("input", ""))
+                embedding = await self._embed(
+                    memory_entry.get("content") or memory_entry.get("input", "")
+                )
             except Exception:
                 embedding = None
 
@@ -174,13 +192,17 @@ class SemanticRetrieval:
             # fallback: keep local store
             if not hasattr(self, "_local_store"):
                 self._local_store = {}
-            eid = entry.get("id") or str(hashlib.sha256(str(time.time()).encode()).hexdigest())
+            eid = entry.get("id") or str(
+                hashlib.sha256(str(time.time()).encode()).hexdigest()
+            )
             entry["id"] = eid
             self._local_store[eid] = entry
             return entry
 
         # if backend exposes async store_entry
-        if hasattr(self.backend, "store_entry") and _is_coroutine_fn(getattr(self.backend, "store_entry")):
+        if hasattr(self.backend, "store_entry") and _is_coroutine_fn(
+            getattr(self.backend, "store_entry")
+        ):
             return await self.backend.store_entry(entry)
 
         # sync store interface
@@ -200,7 +222,13 @@ class SemanticRetrieval:
 
         raise RuntimeError("Backend does not support store operations")
 
-    async def retrieve_similar(self, query: str, agent_id: Optional[str] = None, top_k: int = 5, threshold: Optional[float] = None) -> List[Dict[str, Any]]:
+    async def retrieve_similar(
+        self,
+        query: str,
+        agent_id: Optional[str] = None,
+        top_k: int = 5,
+        threshold: Optional[float] = None,
+    ) -> List[Dict[str, Any]]:
         if threshold is None:
             threshold = self.similarity_threshold
         if not query:
@@ -215,7 +243,9 @@ class SemanticRetrieval:
         entries: List[Dict[str, Any]] = []
         if self.backend is None:
             entries = list(getattr(self, "_local_store", {}).values())
-        elif hasattr(self.backend, "list_entries") and _is_coroutine_fn(getattr(self.backend, "list_entries")):
+        elif hasattr(self.backend, "list_entries") and _is_coroutine_fn(
+            getattr(self.backend, "list_entries")
+        ):
             entries = await self.backend.list_entries()
         elif hasattr(self.backend, "_store"):
             entries = [dict(v, id=k) for k, v in self.backend._store.items()]
@@ -231,7 +261,11 @@ class SemanticRetrieval:
             emb = e.get("embedding")
             if q_emb is None or emb is None:
                 # fallback to substring match
-                score = 1.0 if query.lower() in (e.get("content") or e.get("input", "")).lower() else 0.0
+                score = (
+                    1.0
+                    if query.lower() in (e.get("content") or e.get("input", "")).lower()
+                    else 0.0
+                )
             else:
                 score = _cosine(q_emb, emb)
             if score >= threshold:
@@ -245,7 +279,9 @@ class SemanticRetrieval:
             out.append(ent)
         return out
 
-    async def retrieve_by_metadata(self, agent_id: Optional[str], filters: Dict[str, Any], limit: int = 10) -> List[Dict[str, Any]]:
+    async def retrieve_by_metadata(
+        self, agent_id: Optional[str], filters: Dict[str, Any], limit: int = 10
+    ) -> List[Dict[str, Any]]:
         # Support filters: tags (subset), start_ts, end_ts
         entries = []
         if self.backend and hasattr(self.backend, "_store"):
@@ -274,7 +310,9 @@ class SemanticRetrieval:
         matched.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
         return matched[:limit]
 
-    async def retrieve_recent(self, agent_id: Optional[str], limit: int = 10) -> List[Dict[str, Any]]:
+    async def retrieve_recent(
+        self, agent_id: Optional[str], limit: int = 10
+    ) -> List[Dict[str, Any]]:
         entries = []
         if self.backend and hasattr(self.backend, "_store"):
             entries = list(self.backend._store.values())
@@ -285,7 +323,9 @@ class SemanticRetrieval:
         entries.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
         return entries[:limit]
 
-    async def batch_retrieve(self, queries: List[str], agent_id: Optional[str], top_k: int = 5) -> Dict[int, List[Dict[str, Any]]]:
+    async def batch_retrieve(
+        self, queries: List[str], agent_id: Optional[str], top_k: int = 5
+    ) -> Dict[int, List[Dict[str, Any]]]:
         # Batch embedding generation
         q_embs = []
         for q in queries:
@@ -295,7 +335,11 @@ class SemanticRetrieval:
                 q_embs.append(None)
 
         # gather entries once
-        entries = list(getattr(self.backend, "_store", {}).values()) if self.backend and hasattr(self.backend, "_store") else list(getattr(self, "_local_store", {}).values())
+        entries = (
+            list(getattr(self.backend, "_store", {}).values())
+            if self.backend and hasattr(self.backend, "_store")
+            else list(getattr(self, "_local_store", {}).values())
+        )
 
         results: Dict[int, List[Dict[str, Any]]] = {}
         for idx, q in enumerate(queries):
@@ -306,12 +350,19 @@ class SemanticRetrieval:
                     continue
                 emb = e.get("embedding")
                 if q_emb is None or emb is None:
-                    score = 1.0 if q.lower() in (e.get("content") or e.get("input", "")).lower() else 0.0
+                    score = (
+                        1.0
+                        if q.lower() in (e.get("content") or e.get("input", "")).lower()
+                        else 0.0
+                    )
                 else:
                     score = _cosine(q_emb, emb)
                 scored.append({"entry": e, "score": float(score)})
             scored.sort(key=lambda x: x["score"], reverse=True)
-            results[idx] = [dict(item["entry"], similarity_score=item["score"]) for item in scored[:top_k]]
+            results[idx] = [
+                dict(item["entry"], similarity_score=item["score"])
+                for item in scored[:top_k]
+            ]
 
         return results
 

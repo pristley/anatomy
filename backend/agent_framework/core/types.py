@@ -2,6 +2,7 @@
 
 These models use Pydantic v2-style validators.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

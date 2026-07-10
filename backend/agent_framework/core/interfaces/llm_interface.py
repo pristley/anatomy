@@ -1,4 +1,5 @@
 """Abstract LLM client interface."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -13,7 +14,9 @@ class LLMClient(ABC):
     """
 
     @abstractmethod
-    async def infer(self, system_prompt: str, user_msg: str, max_tokens: int = 512) -> Tuple[str, Dict]:
+    async def infer(
+        self, system_prompt: str, user_msg: str, max_tokens: int = 512
+    ) -> Tuple[str, Dict]:
         raise NotImplementedError()
 
 

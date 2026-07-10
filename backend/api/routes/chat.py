@@ -1,12 +1,20 @@
-from fastapi import APIRouter, Request, HTTPException, Body, Query, WebSocket, WebSocketDisconnect, Depends
+from fastapi import (
+    APIRouter,
+    Request,
+    HTTPException,
+    Body,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+    Depends,
+)
 from fastapi.responses import StreamingResponse, JSONResponse
-from typing import AsyncGenerator, Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional
 import json
 import uuid
 import time
 import asyncio
 import logging
-import json
 from datetime import datetime
 from sqlalchemy.orm import Session
 
@@ -29,7 +37,15 @@ class ChatService:
         if agent_id not in self._store:
             self._store[agent_id] = {}
 
-    def list_messages(self, agent_id: str, skip: int = 0, limit: int = 50, before: int | None = None, after: int | None = None, role: str | None = None):
+    def list_messages(
+        self,
+        agent_id: str,
+        skip: int = 0,
+        limit: int = 50,
+        before: int | None = None,
+        after: int | None = None,
+        role: str | None = None,
+    ):
         self._ensure_agent(agent_id)
         msgs = list(self._store[agent_id].values())
         # filter
@@ -43,7 +59,12 @@ class ChatService:
         msgs = [m for m in msgs if not m.get("deleted")]
         msgs.sort(key=lambda x: x.get("created_at", 0), reverse=True)
         total = len(msgs)
-        return {"messages": msgs[skip: skip + limit], "total": total, "skip": skip, "limit": limit}
+        return {
+            "messages": msgs[skip : skip + limit],
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+        }
 
     def get_message(self, agent_id: str, message_id: str) -> Dict[str, Any]:
         self._ensure_agent(agent_id)
@@ -59,7 +80,14 @@ class ChatService:
             raise KeyError("not found")
         m["deleted"] = True
 
-    def add_feedback(self, agent_id: str, message_id: str, rating: int, feedback: str | None = None, tags: List[str] | None = None) -> Dict[str, Any]:
+    def add_feedback(
+        self,
+        agent_id: str,
+        message_id: str,
+        rating: int,
+        feedback: str | None = None,
+        tags: List[str] | None = None,
+    ) -> Dict[str, Any]:
         m = self.get_message(agent_id, message_id)
         m.setdefault("feedback", {})
         m["feedback"]["rating"] = int(rating)
@@ -69,7 +97,13 @@ class ChatService:
             m["feedback"]["tags"] = tags
         return m
 
-    def store_user_message(self, agent_id: str, content: str, metadata: Dict[str, Any] | None = None, db: Optional[Session] = None) -> Dict[str, Any]:
+    def store_user_message(
+        self,
+        agent_id: str,
+        content: str,
+        metadata: Dict[str, Any] | None = None,
+        db: Optional[Session] = None,
+    ) -> Dict[str, Any]:
         self._ensure_agent(agent_id)
         mid = str(uuid.uuid4())
         msg = {
@@ -92,14 +126,25 @@ class ChatService:
                 except Exception:
                     db_models = None
             if db_models:
-                record = db_models.Message(id=mid, agent_id=agent_id, payload=json.dumps(msg), timestamp=datetime.utcnow())
+                record = db_models.Message(
+                    id=mid,
+                    agent_id=agent_id,
+                    payload=json.dumps(msg),
+                    timestamp=datetime.utcnow(),
+                )
                 db.add(record)
                 db.commit()
             # also keep in-memory for quick access
         self._store[agent_id][mid] = msg
         return msg
 
-    def store_assistant_message(self, agent_id: str, content: str, execution_metadata: Dict[str, Any] | None = None, db: Optional[Session] = None) -> Dict[str, Any]:
+    def store_assistant_message(
+        self,
+        agent_id: str,
+        content: str,
+        execution_metadata: Dict[str, Any] | None = None,
+        db: Optional[Session] = None,
+    ) -> Dict[str, Any]:
         self._ensure_agent(agent_id)
         mid = str(uuid.uuid4())
         msg = {
@@ -121,7 +166,12 @@ class ChatService:
                 except Exception:
                     db_models = None
             if db_models:
-                record = db_models.Message(id=mid, agent_id=agent_id, payload=json.dumps(msg), timestamp=datetime.utcnow())
+                record = db_models.Message(
+                    id=mid,
+                    agent_id=agent_id,
+                    payload=json.dumps(msg),
+                    timestamp=datetime.utcnow(),
+                )
                 db.add(record)
                 db.commit()
         self._store[agent_id][mid] = msg
@@ -138,7 +188,10 @@ class ChatService:
 
         yield {"event": "tool_started", "data": {"tool": "kb_lookup"}}
         await asyncio.sleep(0.01)
-        yield {"event": "tool_completed", "data": {"tool": "kb_lookup", "result_count": 0}}
+        yield {
+            "event": "tool_completed",
+            "data": {"tool": "kb_lookup", "result_count": 0},
+        }
         await asyncio.sleep(0.01)
 
         # token deltas
@@ -191,7 +244,10 @@ def _get_db_gen():
             get_db = None
     return get_db
 
+
 _real_get_db = _get_db_gen()
+
+
 def _db_dep():
     if _real_get_db:
         yield from _real_get_db()
@@ -200,30 +256,44 @@ def _db_dep():
 
 
 @router.post("/")
-async def send_message(agent_id: str, request: Request, payload: Dict[str, Any] = Body(...), db: Optional[Session] = Depends(_db_dep)):
+async def send_message(
+    agent_id: str,
+    request: Request,
+    payload: Dict[str, Any] = Body(...),
+    db: Optional[Session] = Depends(_db_dep),
+):
     content = payload.get("content")
     stream = bool(payload.get("stream", False))
     metadata = payload.get("metadata")
     if not content:
         raise HTTPException(status_code=400, detail="missing content")
 
-    # store user message
-    user_msg = _chat_service.store_user_message(agent_id, content, metadata=metadata, db=db)
+    # store user message (result not used)
+    _user_msg = _chat_service.store_user_message(
+        agent_id, content, metadata=metadata, db=db
+    )
 
     # sync response
     if not stream:
         # produce assistant reply (placeholder logic)
         reply_text = f"echo: {content}"
-        exec_meta = {"pipeline": ["understanding", "tooling", "generation"], "tokens": len(reply_text.split())}
-        assistant_msg = _chat_service.store_assistant_message(agent_id, reply_text, execution_metadata=exec_meta, db=db)
+        exec_meta = {
+            "pipeline": ["understanding", "tooling", "generation"],
+            "tokens": len(reply_text.split()),
+        }
+        assistant_msg = _chat_service.store_assistant_message(
+            agent_id, reply_text, execution_metadata=exec_meta, db=db
+        )
         # return combined object
-        return JSONResponse(content={
-            "message_id": assistant_msg["message_id"],
-            "agent_response": assistant_msg["content"],
-            "execution_metadata": assistant_msg["execution_metadata"],
-            "agent_state": {"status": "idle"},
-            "created_at": assistant_msg["created_at"],
-        })
+        return JSONResponse(
+            content={
+                "message_id": assistant_msg["message_id"],
+                "agent_response": assistant_msg["content"],
+                "execution_metadata": assistant_msg["execution_metadata"],
+                "agent_state": {"status": "idle"},
+                "created_at": assistant_msg["created_at"],
+            }
+        )
 
     # stream=True: return SSE
     async def sse_gen():
@@ -239,8 +309,17 @@ async def send_message(agent_id: str, request: Request, payload: Dict[str, Any] 
 
 
 @router.get("/")
-async def list_messages(agent_id: str, skip: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=200), before: int | None = None, after: int | None = None, role: str | None = None):
-    res = _chat_service.list_messages(agent_id, skip=skip, limit=limit, before=before, after=after, role=role)
+async def list_messages(
+    agent_id: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    before: int | None = None,
+    after: int | None = None,
+    role: str | None = None,
+):
+    res = _chat_service.list_messages(
+        agent_id, skip=skip, limit=limit, before=before, after=after, role=role
+    )
     return res
 
 
@@ -270,7 +349,9 @@ async def feedback(agent_id: str, message_id: str, payload: Dict[str, Any] = Bod
     feedback_text = payload.get("feedback")
     tags = payload.get("tags")
     try:
-        m = _chat_service.add_feedback(agent_id, message_id, rating, feedback=feedback_text, tags=tags)
+        m = _chat_service.add_feedback(
+            agent_id, message_id, rating, feedback=feedback_text, tags=tags
+        )
         return m
     except KeyError:
         raise HTTPException(status_code=404, detail="not found")
@@ -295,13 +376,19 @@ async def websocket_endpoint(websocket: WebSocket, agent_id: str):
             except Exception:
                 await websocket.send_text(json.dumps({"error": "invalid message"}))
                 continue
-            # store user message
-            user_msg = _chat_service.store_user_message(agent_id, content, metadata=payload.get("metadata"), db=None)
+            # store user message (result not used)
+            _user_msg = _chat_service.store_user_message(
+                agent_id, content, metadata=payload.get("metadata"), db=None
+            )
             # broadcast an assistant reply
             reply_text = f"echo: {content}"
             exec_meta = {"pipeline": ["ws_echo"], "tokens": len(reply_text.split())}
-            assistant_msg = _chat_service.store_assistant_message(agent_id, reply_text, execution_metadata=exec_meta, db=None)
-            await websocket.send_text(json.dumps({"event": "response", "message": assistant_msg}))
+            assistant_msg = _chat_service.store_assistant_message(
+                agent_id, reply_text, execution_metadata=exec_meta, db=None
+            )
+            await websocket.send_text(
+                json.dumps({"event": "response", "message": assistant_msg})
+            )
     except WebSocketDisconnect:
         try:
             conns.remove(websocket)

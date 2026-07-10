@@ -1,4 +1,5 @@
 """Layer 10: Observability & structured logging."""
+
 from __future__ import annotations
 
 import json
@@ -13,7 +14,9 @@ def _now_iso() -> str:
 
 class Logger:
     @staticmethod
-    def _format(layer: str, status: str, data: Any | None = None, metrics: dict | None = None) -> dict:
+    def _format(
+        layer: str, status: str, data: Any | None = None, metrics: dict | None = None
+    ) -> dict:
         payload = {
             "timestamp": _now_iso(),
             "layer": layer,
@@ -39,7 +42,9 @@ class Logger:
         print(json.dumps(Logger._format(layer_name, "start", data)))
 
     @staticmethod
-    def log_layer_end(layer_name: str, data: Any | None = None, metrics: dict | None = None) -> None:
+    def log_layer_end(
+        layer_name: str, data: Any | None = None, metrics: dict | None = None
+    ) -> None:
         print(json.dumps(Logger._format(layer_name, "end", data, metrics)))
 
 
@@ -54,7 +59,7 @@ class LogContext(ContextDecorator):
 
     def __exit__(self, exc_type, exc, tb):
         metrics = None
-        status = "ok" if exc is None else "error"
+        # status not needed here; keep metrics for error reporting
         if exc is not None:
             metrics = {"error": str(exc)}
         Logger.log_layer_end(self.layer_name, self.data, metrics)

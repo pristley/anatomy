@@ -1,6 +1,7 @@
 """Abstract memory store interface."""
+
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any
 
 
 class MemoryStore(ABC):

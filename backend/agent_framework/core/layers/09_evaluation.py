@@ -1,4 +1,5 @@
 """Layer 9: Evaluation & scoring of outcomes."""
+
 from __future__ import annotations
 
 from typing import Any, Dict
@@ -8,7 +9,9 @@ class EvaluationEngine:
     def __init__(self) -> None:
         pass
 
-    def evaluate(self, outcome: Dict[str, Any], criteria: Dict[str, Any] | None = None) -> float:
+    def evaluate(
+        self, outcome: Dict[str, Any], criteria: Dict[str, Any] | None = None
+    ) -> float:
         """Return a score between 0.0 and 1.0 for the given outcome.
 
         Simple heuristic: prefer status 'ok' and non-empty output.

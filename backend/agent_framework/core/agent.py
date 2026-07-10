@@ -1,7 +1,7 @@
 """Agent orchestrator that runs the layer pipeline end-to-end."""
+
 from __future__ import annotations
 
-import os
 import time
 from typing import Any, Dict
 
@@ -35,6 +35,7 @@ _StateManager = _load_from_layers("05_state.py", "StateManager")
 _DecisionEngine = _load_from_layers("06_decision.py", "DecisionEngine")
 ClaudeClient = _load_from_layers("../interfaces/claude_client.py", "ClaudeClient")
 _ExecutionEngine = _load_from_layers("07_execution.py", "ExecutionEngine")
+_ExecutionStatus = _load_from_layers("07_execution.py", "ExecutionStatus")
 
 
 class Agent:
@@ -49,6 +50,12 @@ class Agent:
         self.planner = PlanningDecomposition()
         self.state_manager = None
         self.decision_engine = _DecisionEngine()
+        # Execution engine for tool invocation
+        try:
+            self.execution_engine = _ExecutionEngine()
+        except Exception:
+            # fallback if layer not available
+            self.execution_engine = None
 
     async def _run_async(self, query: str, user_id: str) -> Dict[str, Any]:
         start_all = time.monotonic()
@@ -67,32 +74,91 @@ class Agent:
 
             # state
             self.state_manager = _StateManager(agent_id=user_id)
-            state = self.state_manager.initialize_state(goal=understood.get("parsed_query", {}).get("intent"), tasks=tasks)
+            state = self.state_manager.initialize_state(
+                goal=understood.get("parsed_query", {}).get("intent"), tasks=tasks
+            )
 
             # execution loop
             iteration = 0
             last_output = None
             while iteration < self.max_iterations and state.active_tasks:
                 iteration += 1
-                action, params, confidence = self.decision_engine.decide_next_action(state)
+                action, params, confidence = self.decision_engine.decide_next_action(
+                    state
+                )
                 if action is None:
                     break
+                # Prepare task execution. Prefer executing via ExecutionEngine.
+                task_text = (
+                    f"Execute {action} with params {params} (confidence={confidence})"
+                )
 
-                # Mock execution: call reasoner again to simulate tool call/LLM reasoning for the task
-                task_text = f"Execute {action} with params {params} (confidence={confidence})"
-                r = await self.reasoner.reason({"parsed_query": task_text, "kb_results": [], "confidence": confidence})
+                # small internal tool wrapper that delegates to the reasoner
+                class _ReasonerTool:
+                    def __init__(self, reasoner, text, conf):
+                        self._reasoner = reasoner
+                        self._text = text
+                        self._conf = conf
+
+                    def validate_params(self, p):
+                        return None
+
+                    async def run_async(self, **p):
+                        return await self._reasoner.reason(
+                            {
+                                "parsed_query": self._text,
+                                "kb_results": [],
+                                "confidence": self._conf,
+                            }
+                        )
+
+                    def estimated_cost(self, **p):
+                        return 0.0
+
+                tool = _ReasonerTool(self.reasoner, task_text, confidence)
+
+                if self.execution_engine is not None:
+                    result = await self.execution_engine.execute(
+                        tool, {}, request_id=user_id
+                    )
+                    if result.status == _ExecutionStatus.SUCCESS:
+                        r = result.output
+                        metrics["tokens_used"] += getattr(
+                            result.metrics, "tokens_used", 0
+                        )
+                        metrics["cost"] += getattr(result.metrics, "cost", 0.0)
+                    else:
+                        # on error or timeout, record and continue
+                        r = {"reasoning_output": None, "tokens_used": 0, "cost": 0.0}
+                else:
+                    # fallback to previous behavior
+                    r = await self.reasoner.reason(
+                        {
+                            "parsed_query": task_text,
+                            "kb_results": [],
+                            "confidence": confidence,
+                        }
+                    )
                 metrics["tokens_used"] += r.get("tokens_used", 0)
                 metrics["cost"] += r.get("cost", 0.0)
 
                 # assume first active task is the one
                 if state.active_tasks:
                     tid = state.active_tasks[0].id
-                    state = self.state_manager.mark_task_complete(state, tid, result={"output": r.get("reasoning_output")})
+                    state = self.state_manager.mark_task_complete(
+                        state, tid, result={"output": r.get("reasoning_output")}
+                    )
                     last_output = r.get("reasoning_output")
 
             total_ms = int((time.monotonic() - start_all) * 1000)
             metrics["duration_ms"] = total_ms
-            return {"success": True, "output": last_output, "metrics": metrics, "cost": metrics.get("cost", 0.0), "execution_time_ms": total_ms}
+            return {
+                "success": True,
+                "output": last_output,
+                "metrics": metrics,
+                "cost": metrics.get("cost", 0.0),
+                "execution_time_ms": total_ms,
+            }
 
         except Exception as exc:  # pragma: no cover - orchestration error handling
             return {"success": False, "error": str(exc)}
@@ -131,5 +197,6 @@ class AgentCoordinator:
         if agent is None:
             raise KeyError(f"agent not registered: {agent_id}")
         return agent.run(query, user_id)
+
 
 __all__.append("AgentCoordinator")

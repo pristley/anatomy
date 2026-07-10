@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from typing import Any, Dict, List, Optional
 import time
@@ -30,28 +30,47 @@ class MemoryService:
         self.semantic = SemanticMemory() if SemanticMemory is not None else None
         # retrieval wrapper
         try:
-            from backend.agent_framework.memory.retrieval import SemanticRetrieval, SimpleEmbeddings
+            from backend.agent_framework.memory.retrieval import (
+                SemanticRetrieval,
+                SimpleEmbeddings,
+            )
         except Exception:
             try:
-                from agent_framework.memory.retrieval import SemanticRetrieval, SimpleEmbeddings
+                from agent_framework.memory.retrieval import (
+                    SemanticRetrieval,
+                    SimpleEmbeddings,
+                )
             except Exception:
                 SemanticRetrieval = None
                 SimpleEmbeddings = None
 
         if SemanticRetrieval is not None:
             emb = SimpleEmbeddings() if SimpleEmbeddings is not None else None
-            self.retriever = SemanticRetrieval(embedding_model=emb, backend=self.episodic)
+            self.retriever = SemanticRetrieval(
+                embedding_model=emb, backend=self.episodic
+            )
         else:
             self.retriever = None
 
-    async def search(self, agent_id: str, q: str, type_: str = "all", limit: int = 10, threshold: float = 0.7, include_score: bool = True, skip: int = 0):
+    async def search(
+        self,
+        agent_id: str,
+        q: str,
+        type_: str = "all",
+        limit: int = 10,
+        threshold: float = 0.7,
+        include_score: bool = True,
+        skip: int = 0,
+    ):
         start = time.time()
         results: List[Dict[str, Any]] = []
         if type_ in ("episodic", "all") and self.episodic:
             # naive episodic search: use episodic.retrieve_similar if available
             try:
                 if hasattr(self.episodic, "retrieve_similar"):
-                    ep = await maybe_await(self.episodic.retrieve_similar(q, top_k=limit))
+                    ep = await maybe_await(
+                        self.episodic.retrieve_similar(q, top_k=limit)
+                    )
                 else:
                     ep = []
             except Exception:
@@ -64,7 +83,9 @@ class MemoryService:
 
         if type_ in ("semantic", "all") and self.retriever:
             try:
-                sem = await self.retriever.retrieve_similar(q, agent_id=agent_id, top_k=limit, threshold=threshold)
+                sem = await self.retriever.retrieve_similar(
+                    q, agent_id=agent_id, top_k=limit, threshold=threshold
+                )
             except Exception:
                 sem = []
             for s in sem:
@@ -80,9 +101,21 @@ class MemoryService:
         results.sort(key=score_key, reverse=True)
         total = len(results)
         elapsed_ms = int((time.time() - start) * 1000)
-        return {"query": q, "results": results[skip: skip + limit], "count": total, "query_time_ms": elapsed_ms}
+        return {
+            "query": q,
+            "results": results[skip : skip + limit],
+            "count": total,
+            "query_time_ms": elapsed_ms,
+        }
 
-    async def recent(self, agent_id: str, limit: int = 20, type_: str = "all", days: Optional[int] = None, skip: int = 0):
+    async def recent(
+        self,
+        agent_id: str,
+        limit: int = 20,
+        type_: str = "all",
+        days: Optional[int] = None,
+        skip: int = 0,
+    ):
         out = []
         cutoff = None
         if days:
@@ -90,7 +123,9 @@ class MemoryService:
         if type_ in ("episodic", "all") and self.episodic:
             try:
                 if hasattr(self.episodic, "retrieve_recent"):
-                    ep = await maybe_await(self.episodic.retrieve_recent(agent_id, limit=limit))
+                    ep = await maybe_await(
+                        self.episodic.retrieve_recent(agent_id, limit=limit)
+                    )
                 else:
                     ep = []
             except Exception:
@@ -107,15 +142,23 @@ class MemoryService:
 
         # filter by cutoff
         if cutoff:
-            out = [m for m in out if m.get("timestamp", m.get("created_at", 0)) >= cutoff]
+            out = [
+                m for m in out if m.get("timestamp", m.get("created_at", 0)) >= cutoff
+            ]
         # sort desc
         out.sort(key=lambda x: x.get("timestamp", x.get("created_at", 0)), reverse=True)
         total = len(out)
-        return {"memories": out[skip: skip + limit], "count": total}
+        return {"memories": out[skip : skip + limit], "count": total}
 
     async def stats(self, agent_id: str) -> Dict[str, Any]:
-        episodic_count = len(getattr(self.episodic, "_store", {}).get(agent_id, {}) if self.episodic else {})
-        semantic_count = len(getattr(self.semantic, "_patterns", {}) if self.semantic else {})
+        episodic_count = len(
+            getattr(self.episodic, "_store", {}).get(agent_id, {})
+            if self.episodic
+            else {}
+        )
+        semantic_count = len(
+            getattr(self.semantic, "_patterns", {}) if self.semantic else {}
+        )
         total_size_bytes = 0
         # crude size estimate
         if self.episodic:
@@ -125,7 +168,14 @@ class MemoryService:
             for v in getattr(self.semantic, "_patterns", {}).values():
                 total_size_bytes += len(json.dumps(v).encode())
         top_tags = []
-        return {"episodic_count": episodic_count, "semantic_count": semantic_count, "total_size_bytes": total_size_bytes, "memory_usage": {}, "created_date_range": {}, "top_tags": top_tags}
+        return {
+            "episodic_count": episodic_count,
+            "semantic_count": semantic_count,
+            "total_size_bytes": total_size_bytes,
+            "memory_usage": {},
+            "created_date_range": {},
+            "top_tags": top_tags,
+        }
 
     async def delete(self, agent_id: str, memory_id: str) -> None:
         # soft delete from episodic if present
@@ -136,10 +186,17 @@ class MemoryService:
                 return
         raise KeyError("not found")
 
-    async def clear(self, agent_id: str, type_: Optional[str] = None, older_than_days: Optional[int] = None) -> Dict[str, Any]:
+    async def clear(
+        self,
+        agent_id: str,
+        type_: Optional[str] = None,
+        older_than_days: Optional[int] = None,
+    ) -> Dict[str, Any]:
         cutoff = None
         if older_than_days:
-            cutoff = int((datetime.utcnow() - timedelta(days=older_than_days)).timestamp())
+            cutoff = int(
+                (datetime.utcnow() - timedelta(days=older_than_days)).timestamp()
+            )
         cleared = 0
         freed = 0
         if type_ in (None, "episodic") and self.episodic:
@@ -173,17 +230,25 @@ class MemoryService:
         return {"cleared_count": cleared, "freed_bytes": freed}
 
     async def patterns(self, agent_id: str) -> Dict[str, Any]:
-        pats = list(getattr(self.semantic, "_patterns", {}).values()) if self.semantic else []
+        pats = (
+            list(getattr(self.semantic, "_patterns", {}).values())
+            if self.semantic
+            else []
+        )
         return {"patterns": pats, "count": len(pats)}
 
-    async def timeline(self, agent_id: str, granularity: str = "day", limit: int = 30) -> Dict[str, Any]:
+    async def timeline(
+        self, agent_id: str, granularity: str = "day", limit: int = 30
+    ) -> Dict[str, Any]:
         # build timeline over episodic store
         store = getattr(self.episodic, "_store", {}) if self.episodic else {}
         items = list(store.values())
         periods: Dict[str, Dict[str, Any]] = {}
         now = datetime.utcnow()
         for it in items:
-            ts = datetime.utcfromtimestamp(it.get("timestamp", it.get("created_at", now.timestamp())))
+            ts = datetime.utcfromtimestamp(
+                it.get("timestamp", it.get("created_at", now.timestamp()))
+            )
             if granularity == "day":
                 period = ts.strftime("%Y-%m-%d")
             elif granularity == "week":
@@ -191,14 +256,20 @@ class MemoryService:
                 period = f"{y}-W{w}"
             else:
                 period = ts.strftime("%Y-%m")
-            entry = periods.setdefault(period, {"period": period, "count": 0, "preview": ""})
+            entry = periods.setdefault(
+                period, {"period": period, "count": 0, "preview": ""}
+            )
             entry["count"] += 1
             if not entry["preview"]:
                 entry["preview"] = it.get("input") or it.get("content") or ""
-        timeline = sorted(list(periods.values()), key=lambda x: x["period"], reverse=True)[:limit]
+        timeline = sorted(
+            list(periods.values()), key=lambda x: x["period"], reverse=True
+        )[:limit]
         return {"timeline": timeline}
 
-    async def export(self, agent_id: str, fmt: str = "json", include: List[str] | None = None):
+    async def export(
+        self, agent_id: str, fmt: str = "json", include: List[str] | None = None
+    ):
         include = include or ["content", "metadata", "scores"]
         # collect memories
         items = []
@@ -212,9 +283,23 @@ class MemoryService:
             writer = csv.writer(buf)
             writer.writerow(["id", "type", "content", "metadata", "score"])
             for it in items:
-                writer.writerow([it.get("id"), it.get("type", "episodic"), it.get("content") or it.get("input"), json.dumps(it.get("metadata", {})), it.get("similarity_score")])
+                writer.writerow(
+                    [
+                        it.get("id"),
+                        it.get("type", "episodic"),
+                        it.get("content") or it.get("input"),
+                        json.dumps(it.get("metadata", {})),
+                        it.get("similarity_score"),
+                    ]
+                )
             buf.seek(0)
-            return StreamingResponse(iter([buf.getvalue().encode()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=memory_export_{agent_id}.csv"})
+            return StreamingResponse(
+                iter([buf.getvalue().encode()]),
+                media_type="text/csv",
+                headers={
+                    "Content-Disposition": f"attachment; filename=memory_export_{agent_id}.csv"
+                },
+            )
         else:
             payload = []
             for it in items:
@@ -226,8 +311,16 @@ class MemoryService:
                 if "scores" in include and it.get("similarity_score") is not None:
                     rec["score"] = it.get("similarity_score")
                 payload.append(rec)
-            body = json.dumps({"agent_id": agent_id, "count": len(payload), "items": payload})
-            return StreamingResponse(iter([body.encode()]), media_type="application/json", headers={"Content-Disposition": f"attachment; filename=memory_export_{agent_id}.json"})
+            body = json.dumps(
+                {"agent_id": agent_id, "count": len(payload), "items": payload}
+            )
+            return StreamingResponse(
+                iter([body.encode()]),
+                media_type="application/json",
+                headers={
+                    "Content-Disposition": f"attachment; filename=memory_export_{agent_id}.json"
+                },
+            )
 
 
 async def maybe_await(v):
@@ -240,15 +333,37 @@ _svc = MemoryService()
 
 
 @router.get("/search")
-async def search(agent_id: str, q: str = Query(...), type: str = Query("all"), limit: int = Query(10, le=50), threshold: float = Query(0.7, ge=0.0, le=1.0), include_score: bool = Query(True), skip: int = Query(0, ge=0)):
+async def search(
+    agent_id: str,
+    q: str = Query(...),
+    type: str = Query("all"),
+    limit: int = Query(10, le=50),
+    threshold: float = Query(0.7, ge=0.0, le=1.0),
+    include_score: bool = Query(True),
+    skip: int = Query(0, ge=0),
+):
     if not q:
         raise HTTPException(status_code=400, detail="q is required")
-    res = await _svc.search(agent_id, q, type_=type, limit=limit, threshold=threshold, include_score=include_score, skip=skip)
+    res = await _svc.search(
+        agent_id,
+        q,
+        type_=type,
+        limit=limit,
+        threshold=threshold,
+        include_score=include_score,
+        skip=skip,
+    )
     return JSONResponse(content=res)
 
 
 @router.get("/recent")
-async def recent(agent_id: str, limit: int = Query(20, le=200), type: str = Query("all"), days: Optional[int] = Query(None), skip: int = Query(0, ge=0)):
+async def recent(
+    agent_id: str,
+    limit: int = Query(20, le=200),
+    type: str = Query("all"),
+    days: Optional[int] = Query(None),
+    skip: int = Query(0, ge=0),
+):
     res = await _svc.recent(agent_id, limit=limit, type_=type, days=days, skip=skip)
     return JSONResponse(content=res)
 
@@ -269,7 +384,12 @@ async def delete(agent_id: str, memory_id: str):
 
 
 @router.post("/clear")
-async def clear(agent_id: str, confirm: bool = Query(False), type: Optional[str] = Query(None), older_than_days: Optional[int] = Query(None)):
+async def clear(
+    agent_id: str,
+    confirm: bool = Query(False),
+    type: Optional[str] = Query(None),
+    older_than_days: Optional[int] = Query(None),
+):
     if not confirm:
         raise HTTPException(status_code=400, detail="confirm=true required")
     res = await _svc.clear(agent_id, type_=type, older_than_days=older_than_days)
@@ -283,27 +403,19 @@ async def patterns(agent_id: str):
 
 
 @router.get("/timeline")
-async def timeline(agent_id: str, granularity: str = Query("day"), limit: int = Query(30, le=365)):
+async def timeline(
+    agent_id: str, granularity: str = Query("day"), limit: int = Query(30, le=365)
+):
     res = await _svc.timeline(agent_id, granularity=granularity, limit=limit)
     return JSONResponse(content=res)
 
 
 @router.post("/export")
-async def export(agent_id: str, format: str = Query("json"), include: Optional[str] = Query(None)):
+async def export(
+    agent_id: str, format: str = Query("json"), include: Optional[str] = Query(None)
+):
     inc = include.split(",") if include else None
     return await _svc.export(agent_id, fmt=format, include=inc)
-from fastapi import APIRouter, Query, HTTPException
-from typing import List
-
-router = APIRouter()
 
 
-@router.get("/search")
-async def search_memory(agent_id: str, q: str = Query(...), limit: int = 10):
-    # Placeholder: wiring into retrieval layer
-    return {"query": q, "results": [], "count": 0}
-
-
-@router.get("/recent")
-async def recent(agent_id: str, limit: int = 20):
-    return {"memories": [], "count": 0}
+# Duplicate placeholder endpoints removed — real implementations exist above.

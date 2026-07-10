@@ -8,8 +8,10 @@ Status:
     TODO: Implement seeding of example data
 """
 
+
 def main():
     print("seed_examples: placeholder")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

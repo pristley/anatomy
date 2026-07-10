@@ -1,7 +1,8 @@
 """Layer 6: Decision engine."""
+
 from __future__ import annotations
 
-from typing import Tuple, Optional, Any
+from typing import Tuple, Optional
 
 from ..types import AgentState, TaskDef
 from agent_framework.tools.base import ToolRegistry
@@ -16,7 +17,9 @@ class DecisionEngine:
         completed_ids = {t.id for t in state.completed_tasks}
         return all(d in completed_ids for d in task.dependencies)
 
-    def decide_next_action(self, state: AgentState) -> Tuple[Optional[str], Optional[dict], float]:
+    def decide_next_action(
+        self, state: AgentState
+    ) -> Tuple[Optional[str], Optional[dict], float]:
         """Return next (action_type/tool_name, parameters, confidence).
 
         Chooses the first incomplete task whose dependencies are satisfied.

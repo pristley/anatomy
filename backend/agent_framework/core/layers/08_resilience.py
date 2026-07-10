@@ -1,8 +1,7 @@
 """Layer 8: Resilience & error handling with retries/backoff."""
+
 from __future__ import annotations
 
-import math
-import time
 from typing import Any, Dict
 
 
@@ -30,10 +29,20 @@ class ResilienceLayer:
 
         if kind == self.RETRIABLE and retry_count < self.max_retries:
             retry_count += 1
-            retry_time = int((self.backoff_base ** retry_count) * 1)
-            return {"recovered": True, "action": "retry", "retry_time": retry_time, "retry_count": retry_count}
+            retry_time = int((self.backoff_base**retry_count) * 1)
+            return {
+                "recovered": True,
+                "action": "retry",
+                "retry_time": retry_time,
+                "retry_count": retry_count,
+            }
 
-        return {"recovered": False, "action": "abort", "retry_time": None, "retry_count": retry_count}
+        return {
+            "recovered": False,
+            "action": "abort",
+            "retry_time": None,
+            "retry_count": retry_count,
+        }
 
 
 __all__ = ["ResilienceLayer"]

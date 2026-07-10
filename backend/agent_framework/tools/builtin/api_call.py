@@ -6,7 +6,7 @@ import os
 import re
 import socket
 import base64
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from urllib.parse import urlparse, urlencode, urlunparse, parse_qsl
 import ipaddress
 
@@ -30,7 +30,11 @@ class APICallTool:
     }
 
     def __init__(self) -> None:
-        self.whitelist = [d.strip().lower() for d in os.getenv("API_WHITELIST_DOMAINS", "").split(",") if d.strip()]
+        self.whitelist = [
+            d.strip().lower()
+            for d in os.getenv("API_WHITELIST_DOMAINS", "").split(",")
+            if d.strip()
+        ]
         self.max_response = int(os.getenv("API_MAX_RESPONSE_SIZE", str(1024 * 1024)))
         self.max_timeout = int(os.getenv("API_MAX_TIMEOUT", "30"))
         self.env = os.getenv("ENVIRONMENT", "development").lower()
@@ -101,9 +105,15 @@ class APICallTool:
         if auth:
             if auth.get("type") == "bearer" and auth.get("token"):
                 headers.setdefault("Authorization", f"Bearer {auth.get('token')}")
-            elif auth.get("type") == "basic" and auth.get("username") and auth.get("password"):
+            elif (
+                auth.get("type") == "basic"
+                and auth.get("username")
+                and auth.get("password")
+            ):
                 cred = f"{auth.get('username')}:{auth.get('password')}"
-                headers.setdefault("Authorization", "Basic " + base64.b64encode(cred.encode()).decode())
+                headers.setdefault(
+                    "Authorization", "Basic " + base64.b64encode(cred.encode()).decode()
+                )
             elif auth.get("type") == "api_key":
                 loc = auth.get("in", "header")
                 key = auth.get("key")
@@ -130,7 +140,12 @@ class APICallTool:
         async with httpx.AsyncClient(verify=verify, timeout=timeout) as client:
             try:
                 logger.info("api_call: %s %s", method, final_url)
-                resp = await client.request(method, final_url, headers=headers, json=body if body is not None else None)
+                resp = await client.request(
+                    method,
+                    final_url,
+                    headers=headers,
+                    json=body if body is not None else None,
+                )
             except httpx.ReadTimeout:
                 return {"error": "Request timed out", "status_code": None}
             except httpx.ConnectError:
@@ -194,7 +209,12 @@ def get_tool_definition() -> Any:
                 # no running loop
                 return asyncio.new_event_loop().run_until_complete(tool.execute(params))
 
-        return ToolDefinition(name=APICallTool.name, description=APICallTool.description, params_schema=APICallTool.params_schema, execute_fn=execute_sync)
+        return ToolDefinition(
+            name=APICallTool.name,
+            description=APICallTool.description,
+            params_schema=APICallTool.params_schema,
+            execute_fn=execute_sync,
+        )
     except Exception:
         try:
             from backend.agent_framework.core.tools.registry import Tool
@@ -202,11 +222,20 @@ def get_tool_definition() -> Any:
             def handler(params: Dict[str, Any]) -> Dict[str, Any]:
                 tool = APICallTool()
                 try:
-                    return asyncio.get_event_loop().run_until_complete(tool.execute(params))
+                    return asyncio.get_event_loop().run_until_complete(
+                        tool.execute(params)
+                    )
                 except RuntimeError:
-                    return asyncio.new_event_loop().run_until_complete(tool.execute(params))
+                    return asyncio.new_event_loop().run_until_complete(
+                        tool.execute(params)
+                    )
 
-            return Tool(name=APICallTool.name, description=APICallTool.description, params_schema=APICallTool.params_schema, handler=handler)
+            return Tool(
+                name=APICallTool.name,
+                description=APICallTool.description,
+                params_schema=APICallTool.params_schema,
+                handler=handler,
+            )
         except Exception:
             # Last resort: return class
             return APICallTool()
