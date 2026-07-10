@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 import asyncio
-from typing import Any, Dict
+from typing import Any, Dict, Optional, List
 
 from importlib.util import spec_from_file_location, module_from_spec
 import sys
@@ -72,6 +72,9 @@ class Agent:
             self.evaluator = _EvaluationEngine()
         except Exception:
             self.evaluator = None
+        # Subagent management
+        self._subagents: Dict[str, Agent] = {}
+        self._subagent_tasks: Dict[str, List[asyncio.Task]] = {}
 
     async def _run_async(self, query: str, user_id: str) -> Dict[str, Any]:
         start_all = time.monotonic()
@@ -242,6 +245,38 @@ class Agent:
             # if already in an event loop, return coroutine for caller to await
             return self._run_async(query, user_id)
         return loop.run_until_complete(self._run_async(query, user_id))
+
+    def spawn_subagent(
+        self,
+        agent_id: str,
+        model_name: Optional[str] = None,
+        max_iterations: Optional[int] = None,
+    ) -> "Agent":
+        """Create and register a subagent inheriting parent config.
+
+        Subagents are independent instances but inherit parent `model_name`
+        and `max_iterations` unless overridden.
+        """
+        if agent_id in self._subagents:
+            raise KeyError(f"subagent already exists: {agent_id}")
+
+        child = Agent(model_name=model_name or self.model_name, max_iterations=max_iterations or self.max_iterations)
+        # keep a backref to parent for context if needed
+        child.parent = self
+        self._subagents[agent_id] = child
+        self._subagent_tasks[agent_id] = []
+        return child
+
+    def list_subagents(self) -> List[str]:
+        return list(self._subagents.keys())
+
+    def run_subagent_async(self, agent_id: str, query: str, user_id: str) -> asyncio.Task:
+        """Start a subagent run concurrently and return the asyncio.Task."""
+        if agent_id not in self._subagents:
+            raise KeyError(f"unknown subagent: {agent_id}")
+        task = asyncio.create_task(self._subagents[agent_id]._run_async(query, user_id))
+        self._subagent_tasks.setdefault(agent_id, []).append(task)
+        return task
 
 
 __all__ = ["Agent"]
