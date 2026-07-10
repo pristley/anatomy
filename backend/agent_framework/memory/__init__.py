@@ -1,6 +1,6 @@
-"""Memory subpackage exports."""
+"""Memory systems (episodic + semantic)."""
 from .episodic import EpisodicMemory
 from .semantic import SemanticMemory
-from .retrieval import SimpleEmbeddings, Retriever
+from .store import MemoryStore
 
-__all__ = ["EpisodicMemory", "SemanticMemory", "SimpleEmbeddings", "Retriever"]
+__all__ = ["EpisodicMemory", "SemanticMemory", "MemoryStore"]

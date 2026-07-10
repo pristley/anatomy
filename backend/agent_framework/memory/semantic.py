@@ -1,51 +1,34 @@
-from __future__ import annotations
-
-import time
-import uuid
-from typing import Dict, List, Any
-
-from .base import AbstractSemantic
-from .retrieval import SimpleEmbeddings, Retriever
+"""Semantic memory: vector embeddings and patterns."""
+from dataclasses import dataclass
+from typing import List
 
 
-class SemanticMemory(AbstractSemantic):
-    def __init__(self) -> None:
-        self._patterns: Dict[str, Dict[str, Any]] = {}
-        self._emb = SimpleEmbeddings()
-        self._retriever = Retriever(self._emb)
-
-    def store(self, key: str, value) -> None:
-        self._patterns[key] = value
-
-    def retrieve(self, key: str):
-        return self._patterns.get(key)
-
-    def search(self, query: str, top_k: int = 5) -> List[Dict]:
-        # use embedding-based retriever for better results
-        docs = [{"id": k, **v} for k, v in self._patterns.items()]
-        return self._retriever.retrieve(query, docs, top_k=top_k)
-
-    def store_pattern(self, category: str, pattern: str, confidence: float) -> None:
-        pid = str(uuid.uuid4())
-        embedding = self._emb.embed(pattern)
-        self._patterns[pid] = {
-            "pattern_id": pid,
-            "category": category,
-            "pattern": pattern,
-            "confidence": float(confidence),
-            "created_at": int(time.time()),
-            "embedding": embedding,
-        }
-
-    def retrieve_patterns(self, category: str, min_confidence: float = 0.7) -> List[Dict]:
-        now = int(time.time())
-        # auto-clean: remove patterns older than 30 days with low confidence
-        cutoff = now - 30 * 24 * 60 * 60
-        to_delete = [k for k, v in self._patterns.items() if v.get("created_at", 0) < cutoff and v.get("confidence", 0) < min_confidence]
-        for k in to_delete:
-            del self._patterns[k]
-
-        return [v for v in self._patterns.values() if v.get("category") == category and v.get("confidence", 0) >= min_confidence]
+@dataclass
+class SemanticRecord:
+    """Single semantic memory record."""
+    text: str
+    embedding: List[float]
+    topic: str
+    success_rate: float
 
 
-__all__ = ["SemanticMemory"]
+class SemanticMemory:
+    """Stores and retrieves semantic patterns."""
+
+    def __init__(self):
+        self.records: List[SemanticRecord] = []
+
+    def store(self, record: SemanticRecord) -> None:
+        """Store a semantic record.
+
+        TODO: Implement vector DB storage.
+        """
+        self.records.append(record)
+
+    def retrieve(self, query: str, limit: int = 3) -> List[SemanticRecord]:
+        """Retrieve similar semantic records.
+
+        TODO: Implement vector similarity search; for now return most recent.
+        """
+        return list(self.records)[-limit:]
+
