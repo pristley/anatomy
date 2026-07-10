@@ -9,7 +9,7 @@ Spec: RESIL-001
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Dict, Optional
 
@@ -50,7 +50,7 @@ class ErrorContext:
     error_message: str
     severity: ErrorSeverity
     layer: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     request_id: Optional[str] = None
     attempt_number: int = 0
     additional_info: Dict[str, Any] = field(default_factory=dict)
@@ -112,7 +112,7 @@ class CircuitBreaker:
         if self.state == CircuitState.OPEN:
             # Try recovery after timeout
             if self.last_failure_time:
-                elapsed = (datetime.utcnow() - self.last_failure_time).total_seconds()
+                elapsed = (datetime.now(timezone.utc) - self.last_failure_time).total_seconds()
                 if elapsed > self.timeout:
                     self.state = CircuitState.HALF_OPEN
                     self.success_count = 0  # Reset for testing
@@ -163,7 +163,7 @@ class CircuitBreaker:
     def on_failure(self) -> None:
         """Record failed call."""
         self.failure_count += 1
-        self.last_failure_time = datetime.utcnow()
+        self.last_failure_time = datetime.now(timezone.utc)
 
         if self.failure_count >= self.threshold:
             self.state = CircuitState.OPEN
