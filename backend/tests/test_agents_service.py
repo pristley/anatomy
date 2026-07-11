@@ -1,4 +1,3 @@
-from api.routes import agents as agents_mod
 from api.routes.agents import AgentService, AgentCreate, AgentUpdate
 
 

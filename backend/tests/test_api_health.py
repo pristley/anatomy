@@ -1,5 +1,3 @@
-import os
-import asyncio
 from fastapi.testclient import TestClient
 
 from api.main import create_app
