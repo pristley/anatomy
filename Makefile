@@ -55,3 +55,24 @@ clean: ## Cleanup build artifacts and virtualenv
 .PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | awk 'BEGIN {print "Usage:"} {printf "  %-20s %s\n", $$1, substr($$0, index($$0, "##")+3)}'
+
+# CI targets to mirror GitHub Actions workflow
+.PHONY: ci-init ci-precommit ci-lint ci-test ci
+
+ci-init: ## Create venv and install backend deps + dev tools used by CI
+	@test -d $(VENV) || python -m venv $(VENV)
+	$(PIP) install --upgrade pip setuptools
+	@if [ -f backend/requirements.txt ]; then $(PIP) install -r backend/requirements.txt; fi
+	$(PIP) install ruff black pytest pytest-asyncio pre-commit
+
+ci-precommit: ## Run pre-commit across the repo (same as CI)
+	$(VENV)/bin/pre-commit run --all-files --show-diff-on-failure
+
+ci-lint: ## Run lint checks (ruff + black) — same commands used in CI
+	$(VENV)/bin/ruff check .
+	$(VENV)/bin/black --check .
+
+ci-test: ## Run backend tests with PYTHONPATH set like CI
+	PYTHONPATH=.:backend $(VENV)/bin/pytest backend/tests/ -q
+
+ci: ci-init ci-precommit ci-lint ci-test ## Run full CI pipeline locally
