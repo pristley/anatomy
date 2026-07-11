@@ -1,22 +1,50 @@
-# Understanding - Layer 02
+# Layer 2: Understanding
 
 ## Overview
-The Understanding layer parses and extracts structured intent from the
-canonical `Goal` produced by the input layer. It performs NLP parsing,
-entity extraction, and maps user language to internal task templates.
+The Understanding layer turns canonical input (`AgentInput` / `Goal`) into a
+structured representation: intents, entities, and contextual fields used by
+the planner and reasoner.
 
 ## Responsibilities
-- Parse natural language to determine intents and entities.
-- Enrich the `Goal` with structured fields used by the planner and reasoner.
-- Normalize synonyms and map to known tool or capability names.
+- Parse natural language to extract intent and entities.
+- Normalize synonyms and map expressions to known tool capabilities.
+- Retrieve initial context (KB hits) and attach to the understanding result.
 
 ## Data Flow
-TODO: Add data flow diagram
 
-## Implementation Status
-Implemented: basic parsing and normalization; extendable with custom
-parsers or model-backed analyzers.
+`AgentInput` → `PerceptionEngine` / `UnderstandingLayer` → `Understood` (intent, entities, context)
 
-## Code Reference
-- File: `backend/agent_framework/core/layers/02_understanding.py`
-- Implementation: [backend/agent_framework/core/layers/02_understanding.py](backend/agent_framework/core/layers/02_understanding.py)
+## Key Classes
+
+### `UnderstandingLayer`
+Coordinates NLP parsing and optional knowledge retrieval.
+
+````python
+class UnderstandingLayer:
+	def understand(self, agent_input: AgentInput) -> Dict[str, Any]:
+		"""Return structured understanding for planner and reasoner."""
+````
+
+## Implementation Details
+- Supports pluggable parsers (rule-based or model-backed).
+- Optionally calls a `KnowledgeRetriever` to enrich context.
+
+## Example
+
+````python
+from agent_framework.core.layers._02_understanding import UnderstandingLayer
+
+layer = UnderstandingLayer()
+understood = layer.understand(agent_input)
+````
+
+## Testing
+See `backend/tests/test_layers/test_layer_2.py`.
+
+## Common Issues & Fixes
+- Overly broad intent: tighten parser rules or prompt engineering for model-backed parsers.
+- Missing context: ensure `KnowledgeRetriever` is configured and available.
+
+## See Also
+- Layer 1: Input
+- Layer 3: Reasoning

@@ -1,18 +1,52 @@
-# Planning - Layer 04
+# Layer 4: Planning
 
 ## Overview
-The Planning layer decomposes goals into tasks (`TaskDef`) and produces an
-execution plan. It handles task ordering, dependency analysis, and simple
-topological sorting.
+Planning decomposes a normalized intent into actionable `TaskDef`s, resolves
+dependencies, and produces an ordered plan used by the Decision layer.
 
 ## Responsibilities
-- Break high-level goals into discrete tasks.
-- Resolve dependencies and create an executable plan for the Decision layer.
-- Optionally annotate tasks with resource or capability hints.
+- Decompose goals into tasks.
+- Resolve task dependencies and produce a topologically-sorted plan.
+- Annotate tasks with resource hints and estimated costs.
 
-## Implementation Status
-Implemented: task decomposition and basic topological ordering are available
-in the current planner implementation.
+## Data Flow
 
-## Code Reference
-- Implementation: [backend/agent_framework/core/layers/04_planning.py](backend/agent_framework/core/layers/04_planning.py)
+`Intent` → `PlanningDecomposition.decompose()` → List[`TaskDef`] → `DecisionEngine`
+
+## Key Classes
+
+### `PlanningDecomposition`
+Breaks reasoning output or intent into tasks and returns a DAG of tasks.
+
+````python
+class PlanningDecomposition:
+	def decompose(self, reasoning_output: str) -> List[TaskDef]:
+		"""Return list of task definitions from reasoning output."""
+````
+
+### `topological_sort`
+Utility to order tasks based on dependency graph.
+
+## Example
+
+````python
+from agent_framework.core.layers._04_planning import PlanningDecomposition
+
+planner = PlanningDecomposition()
+tasks = planner.decompose(reasoning_output)
+ordered = topological_sort(tasks)
+````
+
+## Testing
+See `backend/tests/test_layers/test_layer_4.py` for decomposition and sorting tests.
+
+## Common Issues & Fixes
+- Cyclic dependencies: fallback to heuristic ordering or prompt user to clarify.
+- Over-decomposition: limit number of tasks or merge trivial tasks.
+
+## Performance
+- Consider caching decomposition results for identical reasoning outputs.
+
+## See Also
+- Layer 3: Reasoning
+- Layer 6: Decision

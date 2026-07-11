@@ -1,18 +1,42 @@
-# Resilience - Layer 08
+# Layer 8: Resilience
 
 ## Overview
-Resilience implements circuit-breaking and retry strategies around tool and
-external service calls. It prevents cascading failures by tracking recent
-error rates and short-circuiting failing components.
+Resilience provides fault-tolerance primitives (circuit-breakers, retries,
+backoff) that protect the system from cascading external failures.
 
 ## Responsibilities
-- Wrap execution calls with circuit-breaker logic.
-- Track failure counts and apply exponential backoff for retries.
-- Provide hooks to the State and Decision layers for degraded-mode behavior.
+- Wrap tool execution with retry and circuit-breaker policies.
+- Track recent error rates and short-circuit failing components.
+- Expose hooks for degraded-mode behavior to Decision and State layers.
 
-## Implementation Status
-Implemented: `CircuitBreaker` and resilience wrappers are available in the
-resilience layer and used by the execution pipeline.
+## Data Flow
 
-## Code Reference
-- Implementation: [backend/agent_framework/core/layers/08_resilience.py](backend/agent_framework/core/layers/08_resilience.py)
+Execution call -> Resilience wrappers -> (retry/circuit-break) -> Execution
+
+## Key Classes
+
+### `CircuitBreaker`
+Tracks failure counts and decides when to open/close the breaker.
+
+````python
+class CircuitBreaker:
+	def __init__(self, threshold: int, window_seconds: int): ...
+````
+
+## Example
+
+````python
+from agent_framework.core.layers._08_resilience import CircuitBreaker
+
+cb = CircuitBreaker(threshold=5, window_seconds=60)
+````
+
+## Testing
+Simulate failing tool adapters and verify breakers open and retries occur with backoff.
+
+## Common Issues & Fixes
+- Too aggressive breaking: tune thresholds and window lengths.
+- Retry storms: use jitter and exponential backoff to reduce synchronized retries.
+
+## See Also
+- Layer 7: Execution

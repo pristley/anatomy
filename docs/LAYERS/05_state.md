@@ -1,18 +1,47 @@
-# State - Layer 05
+# Layer 5: State
 
 ## Overview
-The State layer maintains execution state for goals and tasks. It provides a
-`StateManager` used by the decision and execution layers to track progress and
-retries.
+The State layer tracks execution progress for goals and tasks and exposes a
+`StateManager` API used by Decision and Execution layers to persist status,
+retries, and checkpoints.
 
 ## Responsibilities
-- Persist and update task/goal statuses across iterations.
-- Record retries, failure counts, and backoff metadata.
-- Offer interfaces for checkpointing and recovery.
+- Initialize and update task/goal state snapshots.
+- Track retries, failure counts, and backoff windows.
+- Expose checkpointing and recovery interfaces.
 
-## Implementation Status
-Implemented: `StateManager` keeps in-memory state for current runs; pluggable
-storage can be added for durable persistence.
+## Data Flow
 
-## Code Reference
-- Implementation: [backend/agent_framework/core/layers/05_state.py](backend/agent_framework/core/layers/05_state.py)
+Planner produces `TaskDef` → StateManager initializes `AgentState` → Decision/Execution update statuses
+
+## Key Classes
+
+### `StateManager`
+Manages `AgentState` lifecycle and snapshots.
+
+````python
+class StateManager:
+	def initialize(self, goal: Goal) -> AgentState: ...
+	def mark_complete(self, task_id: str): ...
+````
+
+## Example
+
+````python
+from agent_framework.core.layers._05_state import StateManager
+
+sm = StateManager()
+state = sm.initialize(goal)
+sm.mark_complete(task_id)
+````
+
+## Testing
+See `backend/tests/test_layers/test_layer_5.py`.
+
+## Common Issues & Fixes
+- In-memory state lost after restart: use pluggable durable store.
+- Conflicting updates: use optimistic locking or sequence numbers on state updates.
+
+## See Also
+- Layer 4: Planning
+- Layer 6: Decision

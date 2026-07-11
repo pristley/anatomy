@@ -1,18 +1,45 @@
-# Evaluation - Layer 09
+# Layer 9: Evaluation
 
 ## Overview
-The Evaluation layer examines task outcomes and computes `TaskOutcome` and
-`GoalEvaluation` summaries. It's used to measure success, compute similarity
-to desired goals, and produce feedback for future runs.
+The Evaluation layer scores task outcomes and aggregates metrics to produce
+goal-level evaluations. It informs learning signals, success rates, and
+feedback to users or upstream components.
 
 ## Responsibilities
-- Score task outcomes and aggregate into goal-level evaluations.
-- Produce feedback strings and success/failure labels for tasks.
-- Supply metrics such as success_rate and confidence.
+- Score individual task outcomes and compute aggregate metrics.
+- Produce structured `TaskOutcome` and `GoalEvaluation` objects.
+- Provide hooks to store evaluation results for telemetry and training.
 
-## Implementation Status
-Implemented: evaluation helper functions and dataclasses are provided in the
-layer; the `Agent` appends `TaskOutcome` objects during runs.
+## Data Flow
 
-## Code Reference
-- Implementation: [backend/agent_framework/core/layers/09_evaluation.py](backend/agent_framework/core/layers/09_evaluation.py)
+ExecutionResult -> EvaluationLayer.score() -> TaskOutcome -> GoalEvaluation
+
+## Key Classes
+
+### `EvaluationLayer`
+Scores and aggregates results.
+
+````python
+class EvaluationLayer:
+	def score(self, exec_result: ExecutionResult) -> TaskOutcome: ...
+````
+
+## Example
+
+````python
+from agent_framework.core.layers._09_evaluation import EvaluationLayer
+
+el = EvaluationLayer()
+outcome = el.score(exec_result)
+````
+
+## Testing
+Test scoring logic with synthetic execution results and verify aggregated metrics.
+
+## Common Issues & Fixes
+- Misleading scores: normalize metrics and ensure consistent baselines.
+- Missing telemetry: ensure evaluation results are persisted or emitted.
+
+## See Also
+- Layer 7: Execution
+- Observability: Layer 10
