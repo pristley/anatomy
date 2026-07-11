@@ -35,3 +35,42 @@ Data flow summary:
 6. `09_evaluation.py` computes `TaskOutcome` and `GoalEvaluation` summaries.
 
 See `docs/LAYERS/` for layer-level details and code references.
+
+## Data Flow Diagram
+
+```mermaid
+flowchart TB
+	A[User Query] --> B[Layer 1: Input]\n
+	subgraph L2 [Layer 2: Understanding]
+		B2[Parse & normalize intent]\n  end
+	B --> L2
+
+	subgraph L3 [Layer 3: Reasoning]
+		C[LLM chain-of-thought reasoning]
+	end
+	L2 --> L3
+
+	subgraph L4 [Layer 4: Planning]
+		D[Decompose into task DAG]
+	end
+	L3 --> L4
+
+	subgraph L5 [Layer 5: State]
+		E[Initialize task state]
+	end
+	L4 --> L5
+
+	subgraph Exec [Execution Loop]
+		F[Layer 6: Decision]
+		G[Layer 7: Execution]
+		H[Layer 8: Resilience]
+		I[Layer 9: Evaluation]
+	end
+	L5 --> Exec
+	Exec --> J[Layer 10: Observability]
+	J --> K[Layer 11: Infrastructure]
+
+	K --> L[Final Output]
+```
+
+Loop back if more tasks or continue to next task.
