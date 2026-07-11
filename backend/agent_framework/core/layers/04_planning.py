@@ -6,6 +6,9 @@ from typing import List, Dict
 
 from ..types import TaskDef
 
+# Simple in-memory cache for decompose results to speed up repeated calls
+_decompose_cache: Dict[str, List[TaskDef]] = {}
+
 
 class PlanningDecomposition:
     @staticmethod
@@ -16,6 +19,15 @@ class PlanningDecomposition:
         """
         if not reasoning_text:
             return []
+
+        # check cache
+        try:
+            key = str(hash(reasoning_text))
+            cached = _decompose_cache.get(key)
+            if cached is not None:
+                return cached
+        except Exception:
+            key = None
 
         lines = [ln.strip() for ln in reasoning_text.splitlines() if ln.strip()]
         tasks: List[TaskDef] = []
@@ -53,6 +65,12 @@ class PlanningDecomposition:
                     )
                 )
 
+        # store in cache if key available
+        if key is not None:
+            try:
+                _decompose_cache[key] = tasks
+            except Exception:
+                pass
         return tasks
 
 
