@@ -141,7 +141,7 @@ OBSERVABILITY (Layer 10)
 INFRASTRUCTURE (Layer 11)
     ↓ Cost tracking, budget enforcement
 ```
-![alt text](/asserts/img/overall_diag.png)
+![alt text](asserts/img/overall_diag.png)
 **Each layer:**
 - Has a single responsibility (SRP)
 - Is independently testable
