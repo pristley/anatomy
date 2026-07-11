@@ -14,7 +14,9 @@ def test_memory_service_basic_flow():
     assert isinstance(res2, dict)
 
     # export should return a StreamingResponse-like object; call export and ensure it returns
-    resp = loop.run_until_complete(svc.export("agent-x", fmt="json", include=["content"]))
+    resp = loop.run_until_complete(
+        svc.export("agent-x", fmt="json", include=["content"])
+    )
     # ensure StreamingResponse-like object
     from starlette.responses import StreamingResponse
 

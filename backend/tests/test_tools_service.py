@@ -4,7 +4,10 @@ from api.routes.tools import ToolService
 def test_tool_service_register_and_manage():
     svc = ToolService()
     # register custom with handler_code
-    payload = {"name": "adder", "handler_code": "result = params.get('a',0)+params.get('b',0)"}
+    payload = {
+        "name": "adder",
+        "handler_code": "result = params.get('a',0)+params.get('b',0)",
+    }
     res = svc.register_custom(payload)
     tid = res["id"]
     # get tool
