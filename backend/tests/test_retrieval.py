@@ -40,7 +40,7 @@ async def test_semantic_retrieval_local_store():
     emb = SimpleEmbeddings(dim=8)
     sr = SemanticRetrieval(embedding_model=emb, backend=None, similarity_threshold=0.0)
     e1 = await sr.store_memory({"content": "I boiled an egg", "agent_id": "demo"})
-    e2 = await sr.store_memory({"content": "I watched TV", "agent_id": "demo"})
+    _e2 = await sr.store_memory({"content": "I watched TV", "agent_id": "demo"})
     assert "id" in e1 and "embedding" in e1
 
     res = await sr.retrieve_similar("boil", agent_id="demo", top_k=5)

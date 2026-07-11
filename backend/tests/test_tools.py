@@ -1,5 +1,4 @@
 import time
-import pytest
 
 from agent_framework.tools.base import ToolDefinition, ToolRegistry, ToolExecutor
 
@@ -9,7 +8,9 @@ def test_tool_registry_and_executor():
         return {"echo": params}
 
     reg = ToolRegistry()
-    td = ToolDefinition(name="echo", description="echo", params_schema=None, execute_fn=echo)
+    td = ToolDefinition(
+        name="echo", description="echo", params_schema=None, execute_fn=echo
+    )
     reg.register(td)
     assert reg.get("echo") is td
 

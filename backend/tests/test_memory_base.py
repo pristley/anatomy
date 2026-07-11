@@ -2,9 +2,6 @@ import pytest
 
 from agent_framework.memory.base import (
     AbstractMemory,
-    AbstractEpisodic,
-    AbstractSemantic,
-    AbstractRetriever,
 )
 
 

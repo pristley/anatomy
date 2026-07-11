@@ -1,4 +1,7 @@
-from agent_framework.core.agent import PlanningDecomposition, _topological_sort as topological_sort
+from agent_framework.core.agent import (
+    PlanningDecomposition,
+    _topological_sort as topological_sort,
+)
 from agent_framework.core.types import TaskDef
 
 

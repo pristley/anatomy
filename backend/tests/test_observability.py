@@ -1,4 +1,3 @@
-import json
 from agent_framework.observability import logger, context
 
 
