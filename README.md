@@ -436,7 +436,7 @@ Target: **80%+ code coverage**
 
 ### Architecture
 - **[Architecture Deep Dive](docs/ARCHITECTURE.md)** — Detailed explanation of 11-layer stack
-- **[Layer-by-Layer Docs](docs/LAYERS/)** — Individual layer documentation
+- **[Layer-by-Layer Docs](docs/LAYERS/README.md)** — Individual layer documentation
 - **[Multi-Agent Design](docs/MULTI_AGENT.md)** — How subagent orchestration works
 
 ### API & Integration
