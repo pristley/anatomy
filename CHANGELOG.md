@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `docs/ARCHITECTURE.md`: appended a text data-flow diagram describing the 11-layer pipeline.
+- `docs/asserts/img/architecture.svg`: static SVG rendering of the architecture diagram.
+- `docs/asserts/img/architecture.mmd`: mermaid source for the architecture diagram.
+- `docs/TROUBLESHOOTING.md`: troubleshooting guide with common issues and fixes.
+- `docs/LAYERS/README.md`: landing page for per-layer documentation.
+- `backend/tests/test_agents_service.py`: additional unit test for `AgentService` CRUD flows.
+
+### Chore
+- Pre-commit and lint fixes applied to tests and docs (formatting, trailing whitespace, ruff fixes).
+
+### Notes
+- CI steps were run locally via `make ci` and now pass: lints and tests all green.
+# Changelog
+
 All notable changes to this project are documented here. This file follows
 the "Keep a Changelog" style with an **Unreleased** section for ongoing
 work.
