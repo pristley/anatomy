@@ -74,3 +74,78 @@ flowchart TB
 ```
 
 Loop back if more tasks or continue to next task.
+
+## Data Flow Diagram (Text)
+
+User Query
+↓
+┌─────────────────────────────────────────┐
+│ Layer 1: Input                          │
+│ Parse & normalize query                 │
+└──────────────┬──────────────────────────┘
+↓
+┌─────────────────────────────────────────┐
+│ Layer 2: Understanding                  │
+│ Extract intent, retrieve context        │
+└──────────────┬──────────────────────────┘
+↓
+┌─────────────────────────────────────────┐
+│ Layer 3: Reasoning                      │
+│ LLM chain-of-thought reasoning          │
+└──────────────┬──────────────────────────┘
+↓
+┌─────────────────────────────────────────┐
+│ Layer 4: Planning                       │
+│ Decompose into task DAG                 │
+└──────────────┬──────────────────────────┘
+↓
+┌─────────────────────────────────────────┐
+│ Layer 5: State                          │
+│ Initialize task state                   │
+└──────────────┬──────────────────────────┘
+↓
+┌──────────────┐
+│ Execution    │
+│ Loop         │
+└──────────────┘
+↓
+┌─────────────────────────────────────────┐
+│ Layer 6: Decision                       │
+│ Select next action                      │
+└──────────────┬──────────────────────────┘
+↓
+┌─────────────────────────────────────────┐
+│ Layer 7: Execution                      │
+│ Run tool with timeout                   │
+└──────────────┬──────────────────────────┘
+↓
+┌─────────────────────────────────────────┐
+│ Layer 8: Resilience                     │
+│ Error recovery & circuit breaker        │
+└──────────────┬──────────────────────────┘
+↓
+┌─────────────────────────────────────────┐
+│ Layer 9: Evaluation                     │
+│ Score outcome & feedback                │
+└──────────────┬──────────────────────────┘
+↓
+Loop back (if more tasks)
+or
+Continue to next task
+↓
+┌───────────────────────┐
+│ Layer 10: Observability
+│ Log all metrics       │
+└───────────────────────┘
+↓
+┌───────────────────────┐
+│ Layer 11: Infrastructure
+│ Track cost & budget   │
+└───────────────────────┘
+↓
+Final Output
+
+
+#### Step 4: README Links Check
+
+Run the link-check snippet in the repo root to verify internal docs links.
