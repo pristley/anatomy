@@ -4,7 +4,6 @@ import importlib.util
 import sys
 from pathlib import Path
 import pytest
-import asyncio
 
 
 def _load_mod():
@@ -44,10 +43,14 @@ def test_retriever_with_and_without_embedding():
 async def test_semantic_retrieval_local_store_and_filters():
     mod = _load_mod()
     emb = mod.SimpleEmbeddings(dim=8)
-    sr = mod.SemanticRetrieval(embedding_model=emb, backend=None, similarity_threshold=0.0)
+    sr = mod.SemanticRetrieval(
+        embedding_model=emb, backend=None, similarity_threshold=0.0
+    )
 
-    e1 = await sr.store_memory({"content": "I boiled an egg", "agent_id": "demo"})
-    e2 = await sr.store_memory({"content": "I watched TV", "agent_id": "demo", "metadata": {"tags": ["media"]}})
+    _e1 = await sr.store_memory({"content": "I boiled an egg", "agent_id": "demo"})
+    _e2 = await sr.store_memory(
+        {"content": "I watched TV", "agent_id": "demo", "metadata": {"tags": ["media"]}}
+    )
 
     recent = await sr.retrieve_recent("demo", limit=5)
     assert isinstance(recent, list) and len(recent) >= 2

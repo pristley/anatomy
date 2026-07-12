@@ -1,7 +1,6 @@
 """Edge case tests for multi-agent scenarios."""
 
 import pytest
-import asyncio
 from agent_framework.core.agent import Agent
 from agent_framework.core.types import TaskDef
 

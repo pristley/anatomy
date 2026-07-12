@@ -3,7 +3,6 @@
 import importlib.util
 import sys
 from pathlib import Path
-import pytest
 
 
 def _load_mod():

@@ -2,6 +2,7 @@
 
 This script is resilient to being run from `backend/` (use: `python ../scripts/benchmark.py`).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -55,13 +56,18 @@ async def benchmark_layer_1():
 
 async def benchmark_layer_2():
     UnderstandingLayer = _load_layer("02_understanding.py", "UnderstandingLayer")
+
     # create a dummy agent_input object with `query` attribute
     class Dummy:
         def __init__(self, query):
             self.query = query
 
     layer = UnderstandingLayer()
-    inputs = [Dummy("What is Python?"), Dummy("How to code?"), Dummy("Tell me about AI")]
+    inputs = [
+        Dummy("What is Python?"),
+        Dummy("How to code?"),
+        Dummy("Tell me about AI"),
+    ]
     times: List[float] = []
     for inp in inputs:
         start = time.monotonic()
@@ -85,7 +91,9 @@ async def benchmark_full_pipeline():
         res = await agent._run_async(q, "user1")
         elapsed = (time.monotonic() - start) * 1000
         times.append(elapsed)
-        print(f"  run -> success={res.get('success')} duration_ms={res.get('execution_time_ms')}")
+        print(
+            f"  run -> success={res.get('success')} duration_ms={res.get('execution_time_ms')}"
+        )
     avg = sum(times) / len(times)
     print(f"\nFull Pipeline:         {avg:.2f}ms avg")
     print(f"  Min: {min(times):.2f}ms")
@@ -99,14 +107,14 @@ async def main():
     print("=" * 60)
     print()
 
-    l1 = await benchmark_layer_1()
-    l2 = await benchmark_layer_2()
+    _l1 = await benchmark_layer_1()
+    _l2 = await benchmark_layer_2()
     full = await benchmark_full_pipeline()
 
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)
-    print(f"Target simple query:   <500ms")
+    print("Target simple query:   <500ms")
     print(f"Actual:                {full:.2f}ms")
     if full < 500:
         print("Status:                ✅ GOOD")

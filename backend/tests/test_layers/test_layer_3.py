@@ -4,7 +4,6 @@ import importlib.util
 import sys
 from pathlib import Path
 import pytest
-import asyncio
 
 
 def _load_mod():

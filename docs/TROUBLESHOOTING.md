@@ -3,8 +3,8 @@
 ## Common Issues
 
 ### Issue 1: "CLAUDE_API_KEY is not set"
-**Symptom:** `RuntimeError: CLAUDE_API_KEY is required in production`  
-**Cause:** Environment variable not configured  
+**Symptom:** `RuntimeError: CLAUDE_API_KEY is required in production`
+**Cause:** Environment variable not configured
 **Solution:**
 ```bash
 export CLAUDE_API_KEY="sk-ant-..."
@@ -13,8 +13,8 @@ echo "CLAUDE_API_KEY=sk-ant-..." >> .env
 ```
 
 ### Issue 2: Queries timeout after 30 seconds
-**Symptom:** Task execution times out  
-**Cause:** Complex query or slow LLM  
+**Symptom:** Task execution times out
+**Cause:** Complex query or slow LLM
 **Solution:**
 ```python
 from agent_framework.config import AgentConfig
@@ -24,8 +24,8 @@ agent = Agent(config=config)
 ```
 
 ### Issue 3: Memory grows unbounded
-**Symptom:** Process uses more RAM over time  
-**Cause:** Memory system not evicting old entries  
+**Symptom:** Process uses more RAM over time
+**Cause:** Memory system not evicting old entries
 **Solution:**
 ```python
 # Clear old memory entries periodically
@@ -33,8 +33,8 @@ agent.memory.cleanup(max_age_hours=24)
 ```
 
 ### Issue 4: Subagent doesn't return result
-**Symptom:** `run_with_subagents` hangs or times out  
-**Cause:** Subagent error not propagated  
+**Symptom:** `run_with_subagents` hangs or times out
+**Cause:** Subagent error not propagated
 **Solution:**
 ```bash
 # Enable debug logging

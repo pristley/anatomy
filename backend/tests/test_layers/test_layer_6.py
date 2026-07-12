@@ -29,14 +29,23 @@ def test_decision_engine_with_registered_tool():
     # register a dummy tool
     reg = ToolRegistry.get_default()
     reg._tools.clear()
+
     def exec_fn(p):
         return {"ok": True}
 
-    td = ToolDefinition(name="tool", description="d", params_schema=None, execute_fn=exec_fn)
+    td = ToolDefinition(
+        name="tool", description="d", params_schema=None, execute_fn=exec_fn
+    )
     reg.register(td)
 
     t = TaskDef(id="t1", name="do", action_type="tool", parameters={})
-    state = AgentState(agent_id="a", active_tasks=[t], completed_tasks=[], status="running", memory_refs=[])
+    state = AgentState(
+        agent_id="a",
+        active_tasks=[t],
+        completed_tasks=[],
+        status="running",
+        memory_refs=[],
+    )
     de = mod.DecisionEngine()
     tool_name, params, conf = de.decide_next_action(state)
     assert tool_name == "tool"
@@ -51,11 +60,22 @@ def test_decision_skips_invalid_params():
     reg = ToolRegistry.get_default()
     reg._tools.clear()
 
-    td = ToolDefinition(name="tool2", description="d", params_schema={"x": {"type": int, "required": True}}, execute_fn=lambda p: p)
+    td = ToolDefinition(
+        name="tool2",
+        description="d",
+        params_schema={"x": {"type": int, "required": True}},
+        execute_fn=lambda p: p,
+    )
     reg.register(td)
 
     t = TaskDef(id="t2", name="do", action_type="tool2", parameters={})
-    state = AgentState(agent_id="a", active_tasks=[t], completed_tasks=[], status="running", memory_refs=[])
+    state = AgentState(
+        agent_id="a",
+        active_tasks=[t],
+        completed_tasks=[],
+        status="running",
+        memory_refs=[],
+    )
     de = mod.DecisionEngine()
     tool_name, params, conf = de.decide_next_action(state)
     # missing required param -> should skip and return None

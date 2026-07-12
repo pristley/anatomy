@@ -36,6 +36,7 @@ def test_mocked_response_when_no_key():
 
 def test_calls_httpx_when_key_present(monkeypatch):
     mod = _load_mod()
+
     async def fake_post(url, json, headers):
         class R:
             def raise_for_status(self):

@@ -36,4 +36,4 @@ Extras & stubs
  - [MULTI_AGENT.md](MULTI_AGENT.md)
 
 If you'd like, I can render this TOC into the project README or generate
-a sidebar for a static site generator (MkDocs). 
+a sidebar for a static site generator (MkDocs).

@@ -75,11 +75,11 @@ See `backend/tests/test_layers/test_layer_3.py` for comprehensive tests.
 ## Common Issues & Fixes
 
 ### Issue: Reasoning timeout
-**Cause:** LLM is slow or API is overloaded  
+**Cause:** LLM is slow or API is overloaded
 **Fix:** Increase timeout in config or use faster model
 
 ### Issue: Nonsensical reasoning output
-**Cause:** Poor prompt or LLM confusion  
+**Cause:** Poor prompt or LLM confusion
 **Fix:** Refine prompt, provide better context examples
 
 ## See Also
