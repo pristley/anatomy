@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="2200" viewBox="0 0 1000 2200">
+  <style>
+    .box { fill: #f8f9fa; stroke: #2b2d42; stroke-width: 2; }
+    .title { font: 700 18px 'Arial', sans-serif; fill: #111827; }
+    .subtitle { font: 14px 'Arial', sans-serif; fill: #374151; }
+    .arrow { stroke: #111827; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#111827" />
+    </marker>
+  </defs>
+
+  <!-- Layer boxes stacked vertically -->
+  <g transform="translate(50,40)">
+    <!-- Layer 1 -->
+    <rect class="box" x="0" y="0" width="900" height="80" rx="8"/>
+    <text x="20" y="28" class="title">Layer 1: Input</text>
+    <text x="20" y="52" class="subtitle">Parse &amp; normalize query</text>
+
+    <!-- Arrow -->
+    <path class="arrow" d="M450 80 L450 120" />
+
+    <!-- Layer 2 -->
+    <rect class="box" x="0" y="120" width="900" height="80" rx="8"/>
+    <text x="20" y="148" class="title">Layer 2: Understanding</text>
+    <text x="20" y="172" class="subtitle">Extract intent, retrieve context</text>
+
+    <path class="arrow" d="M450 200 L450 240" />
+
+    <!-- Layer 3 -->
+    <rect class="box" x="0" y="240" width="900" height="80" rx="8"/>
+    <text x="20" y="268" class="title">Layer 3: Reasoning</text>
+    <text x="20" y="292" class="subtitle">LLM chain-of-thought reasoning</text>
+
+    <path class="arrow" d="M450 320 L450 360" />
+
+    <!-- Layer 4 -->
+    <rect class="box" x="0" y="360" width="900" height="80" rx="8"/>
+    <text x="20" y="388" class="title">Layer 4: Planning</text>
+    <text x="20" y="412" class="subtitle">Decompose into task DAG</text>
+
+    <path class="arrow" d="M450 440 L450 480" />
+
+    <!-- Layer 5 -->
+    <rect class="box" x="0" y="480" width="900" height="80" rx="8"/>
+    <text x="20" y="508" class="title">Layer 5: State</text>
+    <text x="20" y="532" class="subtitle">Initialize task state</text>
+
+    <path class="arrow" d="M450 560 L450 600" />
+
+    <!-- Execution loop container -->
+    <rect x="300" y="600" width="300" height="120" rx="6" fill="#ffffff" stroke="#6b7280" stroke-dasharray="6"/>
+    <text x="450" y="652" text-anchor="middle" class="title">Execution Loop</text>
+
+    <path class="arrow" d="M450 720 L450 760" />
+
+    <!-- Layer 6 -->
+    <rect class="box" x="0" y="760" width="900" height="80" rx="8"/>
+    <text x="20" y="788" class="title">Layer 6: Decision</text>
+    <text x="20" y="812" class="subtitle">Select next action</text>
+
+    <path class="arrow" d="M450 840 L450 880" />
+
+    <!-- Layer 7 -->
+    <rect class="box" x="0" y="880" width="900" height="80" rx="8"/>
+    <text x="20" y="908" class="title">Layer 7: Execution</text>
+    <text x="20" y="932" class="subtitle">Run tool with timeout</text>
+
+    <path class="arrow" d="M450 960 L450 1000" />
+
+    <!-- Layer 8 -->
+    <rect class="box" x="0" y="1000" width="900" height="80" rx="8"/>
+    <text x="20" y="1028" class="title">Layer 8: Resilience</text>
+    <text x="20" y="1052" class="subtitle">Error recovery &amp; circuit breaker</text>
+
+    <path class="arrow" d="M450 1080 L450 1120" />
+
+    <!-- Layer 9 -->
+    <rect class="box" x="0" y="1120" width="900" height="80" rx="8"/>
+    <text x="20" y="1148" class="title">Layer 9: Evaluation</text>
+    <text x="20" y="1172" class="subtitle">Score outcome &amp; feedback</text>
+
+    <path class="arrow" d="M450 1200 L450 1240" />
+
+    <!-- Observability -->
+    <rect class="box" x="0" y="1240" width="900" height="80" rx="8"/>
+    <text x="20" y="1268" class="title">Layer 10: Observability</text>
+    <text x="20" y="1292" class="subtitle">Log all metrics</text>
+
+    <path class="arrow" d="M450 1320 L450 1360" />
+
+    <!-- Infrastructure -->
+    <rect class="box" x="0" y="1360" width="900" height="80" rx="8"/>
+    <text x="20" y="1388" class="title">Layer 11: Infrastructure</text>
+    <text x="20" y="1412" class="subtitle">Track cost &amp; budget</text>
+
+    <path class="arrow" d="M450 1440 L450 1480" />
+
+    <!-- Final output -->
+    <text x="450" y="1520" class="title" text-anchor="middle">Final Output</text>
+  </g>
+</svg>
